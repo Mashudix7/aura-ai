@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
+import { useSession } from "next-auth/react";
 
 const navLinks = [
     { href: "/", label: "Home" },
@@ -13,6 +14,7 @@ const navLinks = [
 
 export default function TopNavbar() {
     const pathname = usePathname();
+    const { data: session } = useSession();
 
     return (
         <motion.nav
@@ -69,22 +71,38 @@ export default function TopNavbar() {
                             notifications
                         </span>
                     </motion.button>
-                    <Link href="/settings">
-                        <motion.div
-                            className="h-9 w-9 rounded-xl bg-accent/15 border border-accent/25 flex items-center justify-center"
-                            whileHover={{
-                                scale: 1.08,
-                                boxShadow: "0 0 15px rgba(255,215,0,0.25)",
-                                borderColor: "rgba(255,215,0,0.5)",
-                            }}
-                            whileTap={{ scale: 0.95 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <span className="material-symbols-outlined text-accent text-sm">
-                                person
-                            </span>
-                        </motion.div>
-                    </Link>
+                    {session ? (
+                        <Link href="/profile">
+                            <motion.div
+                                className="h-9 w-9 rounded-xl overflow-hidden bg-accent/15 border border-accent/25 flex items-center justify-center relative"
+                                whileHover={{
+                                    scale: 1.08,
+                                    boxShadow: "0 0 15px rgba(255,215,0,0.25)",
+                                    borderColor: "rgba(255,215,0,0.5)",
+                                }}
+                                whileTap={{ scale: 0.95 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                {session.user?.image ? (
+                                    <img src={session.user.image} alt="Profile" className="w-full h-full object-cover" />
+                                ) : (
+                                    <span className="text-accent font-bold text-sm">
+                                        {session.user?.name?.charAt(0).toUpperCase() || "U"}
+                                    </span>
+                                )}
+                            </motion.div>
+                        </Link>
+                    ) : (
+                        <Link href="/login">
+                            <motion.button
+                                className="px-4 py-2 rounded-xl bg-accent text-background font-black text-sm hover:bg-accent/90 transition-colors shadow-lg"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                Sign In
+                            </motion.button>
+                        </Link>
+                    )}
                 </div>
             </div>
         </motion.nav>

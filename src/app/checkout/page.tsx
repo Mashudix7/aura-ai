@@ -19,21 +19,36 @@ export default function CheckoutPage() {
         { id: "card", name: "Credit/Debit Card", icon: "credit_card", type: "Card" },
     ];
 
-    const handlePayment = () => {
+    const handlePayment = async () => {
         if (!selectedMethod) return;
         setIsProcessing(true);
         setPaymentStatus("processing");
 
-        // Simulate API call and processing time
-        setTimeout(() => {
-            setPaymentStatus("success");
+        try {
+            const res = await fetch("/api/user/subscription", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ tier: "Elite Access" })
+            });
 
-            // Wait for success animation then redirect
-            setTimeout(() => {
+            if (res.ok) {
+                setPaymentStatus("success");
+                // Wait for success animation then redirect
+                setTimeout(() => {
+                    setIsProcessing(false);
+                    // Force a reload to refresh the NextAuth session if needed
+                    window.location.href = "/profile";
+                }, 2500);
+            } else {
+                // If it fails (e.g., not logged in), just redirect to login
                 setIsProcessing(false);
-                window.location.href = "/";
-            }, 2500);
-        }, 2500);
+                window.location.href = "/login";
+            }
+        } catch (error) {
+            setIsProcessing(false);
+            setPaymentStatus(null);
+            console.error("Payment error:", error);
+        }
     };
 
     return (

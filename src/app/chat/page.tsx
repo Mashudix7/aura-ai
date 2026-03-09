@@ -1,26 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import ChatMessage from "@/components/ChatMessage";
 import Spotlight from "@/components/Spotlight";
 import { FadeIn } from "@/components/AnimationWrappers";
 import { motion, AnimatePresence } from "framer-motion";
+import { useChat } from "ai/react";
+import { useSession } from "next-auth/react";
 
-const messages = [
-    {
-        role: "ai" as const,
-        content:
-            "Hello! I'm Aura, your advanced workspace assistant. I can help you analyze documents, generate project requirements, or debug code. What's on your mind?",
-        timestamp: "10:42 AM",
-    },
-    {
-        role: "user" as const,
-        content:
-            "Can you help me analyze the latest project requirements? I need a summary of the key deliverables for the Q4 roadmap.",
-        timestamp: "10:44 AM",
-    },
-];
 
 const historyChats = [
     { id: 1, title: "Q4 Roadmap Analysis", time: "2 hrs ago" },
@@ -32,10 +20,19 @@ const historyChats = [
 const models = ["Aura GPT", "Smart Mode", "Fast Mode", "Creative Mode"];
 
 export default function ChatPage() {
+    const { data: session } = useSession();
+    const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat();
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
     const [selectedModel, setSelectedModel] = useState(models[0]);
     const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isFullscreen, setIsFullscreen] = useState(false);
+
+    // Auto-scroll to bottom of messages
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages, isLoading]);
 
     return (
         <div
@@ -176,26 +173,37 @@ export default function ChatPage() {
 
                 {/* Messages Container */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8 space-y-8 relative z-10 w-full max-w-4xl mx-auto">
-                    {/* Welcome */}
-                    <FadeIn delay={0.2} className="text-center space-y-2 mb-8 mt-4">
-                        <div className="w-16 h-16 bg-accent/10 rounded-3xl mx-auto flex items-center justify-center mb-6 text-accent border border-accent/20 shadow-[0_0_30px_rgba(255,215,0,0.1)]">
-                            <span className="material-symbols-outlined text-3xl">smart_toy</span>
-                        </div>
-                        <h2 className="text-2xl font-bold text-slate-100 font-sora tracking-tight">
-                            Good morning, Mashudi
-                        </h2>
-                        <p className="text-slate-400 text-sm">
-                            How can Aura assist your workflow today?
-                        </p>
-                    </FadeIn>
+                    {messages.length === 0 ? (
+                        <FadeIn delay={0.2} className="text-center space-y-2 mt-12 mb-8">
+                            <div className="w-16 h-16 bg-accent/10 rounded-3xl mx-auto flex items-center justify-center mb-6 text-accent border border-accent/20 shadow-[0_0_30px_rgba(255,215,0,0.1)]">
+                                <span className="material-symbols-outlined text-3xl">smart_toy</span>
+                            </div>
+                            <h2 className="text-2xl font-bold text-slate-100 font-sora tracking-tight">
+                                Good morning{session?.user?.name ? `, ${session.user.name.split(" ")[0]}` : ""}
+                            </h2>
+                            <p className="text-slate-400 text-sm">
+                                How can Aura assist your workflow today?
+                            </p>
+                        </FadeIn>
+                    ) : null}
 
-                    {/* Messages */}
-                    {messages.map((msg, i) => (
-                        <ChatMessage key={i} {...msg} index={i} />
+                    {messages.map((msg: any, i: number) => (
+                        <ChatMessage
+                            key={msg.id}
+                            role={msg.role as "user" | "ai"}
+                            content={msg.content}
+                            timestamp=""
+                            index={i}
+                        />
                     ))}
 
                     {/* Thinking indicator */}
-                    <ChatMessage role="ai" content="" timestamp="" isThinking index={messages.length} />
+                    {isLoading && (
+                        <ChatMessage role="ai" content="" timestamp="" isThinking index={messages.length} />
+                    )}
+
+                    {/* Invisible div to scroll to */}
+                    <div ref={messagesEndRef} className="h-4" />
                 </div>
 
                 {/* Input Area inside the main container */}
@@ -221,18 +229,33 @@ export default function ChatPage() {
                                 <span className="material-symbols-outlined text-[22px]">mic</span>
                             </motion.button>
                         </div>
-                        <textarea
-                            className="flex-1 bg-transparent border-none focus:ring-0 text-slate-100 placeholder-slate-500 py-3.5 resize-none max-h-32 min-h-[52px] outline-none text-[15px] leading-relaxed"
-                            placeholder="Message Aura AI..."
-                            rows={1}
-                        />
-                        <motion.button
-                            className="mb-1.5 mr-1 p-3 bg-accent text-background rounded-2xl font-bold flex items-center justify-center hover:bg-[#ffe033] transition-colors"
-                            whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(255,215,0,0.4)" }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            <span className="material-symbols-outlined font-bold">arrow_upward</span>
-                        </motion.button>
+                        <form onSubmit={handleSubmit} className="flex-1 flex gap-2">
+                            <textarea
+                                value={input}
+                                onChange={handleInputChange}
+                                className="flex-1 bg-transparent border-none focus:ring-0 text-slate-100 placeholder-slate-500 py-3.5 resize-none max-h-32 min-h-[52px] outline-none text-[15px] leading-relaxed relative top-1"
+                                placeholder="Message Aura AI..."
+                                rows={1}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleSubmit(e as any);
+                                    }
+                                }}
+                            />
+                            <motion.button
+                                type="submit"
+                                disabled={isLoading || !input.trim()}
+                                className={`mb-1.5 mr-1 p-3 rounded-2xl font-bold flex items-center justify-center transition-colors ${input.trim()
+                                    ? "bg-accent text-background hover:bg-[#ffe033]"
+                                    : "bg-white/5 text-slate-500 cursor-not-allowed"
+                                    }`}
+                                whileHover={input.trim() ? { scale: 1.05, boxShadow: "0 0 20px rgba(255,215,0,0.4)" } : {}}
+                                whileTap={input.trim() ? { scale: 0.95 } : {}}
+                            >
+                                <span className="material-symbols-outlined font-bold">arrow_upward</span>
+                            </motion.button>
+                        </form>
                     </motion.div>
                     <p className="text-center text-[10px] text-slate-500 mt-4 uppercase tracking-[0.2em] font-medium opacity-80">
                         Powered by Aura Intelligence Engine • v4.2.0 Premium

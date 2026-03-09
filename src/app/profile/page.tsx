@@ -3,8 +3,10 @@
 import Spotlight from "@/components/Spotlight";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/AnimationWrappers";
 import { motion } from "framer-motion";
+import { useSession, signOut } from "next-auth/react";
 
 export default function SettingsPage() {
+    const { data: session } = useSession();
     return (
         <main className="relative flex-1 w-full max-w-6xl mx-auto px-4 pt-28 pb-24">
             <Spotlight className="!fixed opacity-30" />
@@ -17,13 +19,15 @@ export default function SettingsPage() {
                             <div className="flex flex-col items-center gap-5">
                                 <div className="relative">
                                     <motion.div
-                                        className="w-32 h-32 rounded-full border-2 border-accent p-1"
+                                        className="w-32 h-32 rounded-full border-2 border-accent p-1 overflow-hidden relative group"
                                         whileHover={{ scale: 1.05, boxShadow: "0 0 25px rgba(255,215,0,0.2)" }}
                                     >
-                                        <div className="w-full h-full rounded-full bg-surface flex items-center justify-center">
-                                            <span className="material-symbols-outlined text-accent text-5xl">
-                                                person
-                                            </span>
+                                        <div className="w-full h-full rounded-full bg-surface flex items-center justify-center overflow-hidden">
+                                            {session?.user?.image ? (
+                                                <img src={session.user.image} alt="Profile" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <span className="material-symbols-outlined text-accent text-5xl">person</span>
+                                            )}
                                         </div>
                                     </motion.div>
                                     <motion.button
@@ -35,8 +39,8 @@ export default function SettingsPage() {
                                     </motion.button>
                                 </div>
                                 <div className="text-center">
-                                    <h2 className="text-3xl font-bold mb-1">Alex Rivera</h2>
-                                    <p className="text-slate-400">alex.rivera@aura-ai.io</p>
+                                    <h2 className="text-3xl font-bold mb-1">{session?.user?.name || "User"}</h2>
+                                    <p className="text-slate-400">{session?.user?.email || "No email available"}</p>
                                 </div>
                                 <div className="flex flex-col gap-3 w-full mt-4">
                                     <motion.button
@@ -47,11 +51,13 @@ export default function SettingsPage() {
                                         Edit Profile
                                     </motion.button>
                                     <motion.button
-                                        className="w-full bg-accent/10 text-accent border border-accent/20 font-bold py-3 px-4 rounded-xl"
-                                        whileHover={{ scale: 1.02, backgroundColor: "rgba(255,215,0,0.15)" }}
+                                        onClick={() => signOut({ callbackUrl: "/" })}
+                                        className="w-full bg-red-500/10 text-red-500 border border-red-500/20 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2"
+                                        whileHover={{ scale: 1.02, backgroundColor: "rgba(239,68,68,0.15)" }}
                                         whileTap={{ scale: 0.98 }}
                                     >
-                                        Share Profile
+                                        <span className="material-symbols-outlined text-sm">logout</span>
+                                        Sign Out
                                     </motion.button>
                                 </div>
                             </div>

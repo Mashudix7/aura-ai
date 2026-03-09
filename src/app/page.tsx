@@ -8,8 +8,9 @@ import Button from "@/components/Button";
 import Footer from "@/components/Footer";
 import Spotlight from "@/components/Spotlight";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/AnimationWrappers";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { useState } from "react";
 
 const features = [
   {
@@ -68,12 +69,37 @@ const pricingPlans = [
     ],
     cta: "Subscribe with Mayar",
     href: "/checkout",
-    highlighted: true,
-    badge: "Best Value",
   },
 ];
 
 export default function HomePage() {
+  const [contactForm, setContactForm] = useState({ name: "", email: "", message: "" });
+  const [isSubmittingContact, setIsSubmittingContact] = useState(false);
+  const [contactSuccess, setContactSuccess] = useState(false);
+
+  const handleContactSubmit = async () => {
+    if (!contactForm.name || !contactForm.email || !contactForm.message) return;
+
+    setIsSubmittingContact(true);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(contactForm)
+      });
+
+      if (res.ok) {
+        setContactSuccess(true);
+        setContactForm({ name: "", email: "", message: "" });
+        setTimeout(() => setContactSuccess(false), 5000);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSubmittingContact(false);
+    }
+  };
+
   return (
     <>
       {/* Hero Section */}
@@ -295,23 +321,77 @@ export default function HomePage() {
           <FadeIn delay={0.2}>
             <div className="bg-[#0f0f11] border border-white/5 rounded-3xl p-8 max-w-2xl mx-auto text-left flex flex-col gap-6 shadow-2xl relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-bold text-slate-400">Name</label>
-                  <input type="text" className="bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent/30 transition-colors" placeholder="John Doe" />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-bold text-slate-400">Email</label>
-                  <input type="email" className="bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent/30 transition-colors" placeholder="john@example.com" />
-                </div>
-              </div>
-              <div className="flex flex-col gap-2 relative z-10">
-                <label className="text-sm font-bold text-slate-400">Message</label>
-                <textarea rows={4} className="bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent/30 transition-colors resize-none" placeholder="How can we help you accelerate?"></textarea>
-              </div>
-              <button className="w-full py-4 rounded-xl bg-accent hover:bg-accent/90 text-background font-black transition-all shadow-[0_0_20px_rgba(255,215,0,0.15)] mt-2 relative z-10">
-                Send Message
-              </button>
+
+              <AnimatePresence mode="wait">
+                {contactSuccess ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex flex-col items-center justify-center py-10 text-center relative z-10"
+                  >
+                    <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center border border-green-500/30 mb-4">
+                      <span className="material-symbols-outlined text-green-400 text-3xl">check</span>
+                    </div>
+                    <h3 className="text-2xl font-bold text-white mb-2">Message Received</h3>
+                    <p className="text-slate-400">Our intelligence division will contact you shortly.</p>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    key="form"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10 mb-6">
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-bold text-slate-400">Name</label>
+                        <input
+                          type="text"
+                          value={contactForm.name}
+                          onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
+                          className="bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent/30 transition-colors"
+                          placeholder="John Doe"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-bold text-slate-400">Email</label>
+                        <input
+                          type="email"
+                          value={contactForm.email}
+                          onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
+                          className="bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent/30 transition-colors"
+                          placeholder="john@example.com"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2 relative z-10">
+                      <label className="text-sm font-bold text-slate-400">Message</label>
+                      <textarea
+                        rows={4}
+                        value={contactForm.message}
+                        onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
+                        className="bg-black/40 border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent/30 transition-colors resize-none"
+                        placeholder="How can we help you accelerate?"
+                      ></textarea>
+                    </div>
+                    <button
+                      onClick={handleContactSubmit}
+                      disabled={isSubmittingContact || !contactForm.name || !contactForm.email || !contactForm.message}
+                      className={`w-full py-4 rounded-xl font-black transition-all mt-6 relative z-10 flex items-center justify-center gap-2 ${(!contactForm.name || !contactForm.email || !contactForm.message)
+                        ? "bg-white/5 text-slate-500 cursor-not-allowed"
+                        : "bg-accent hover:bg-accent/90 text-background shadow-[0_0_20px_rgba(255,215,0,0.15)]"
+                        }`}
+                    >
+                      {isSubmittingContact ? (
+                        <span className="material-symbols-outlined animate-spin">refresh</span>
+                      ) : (
+                        "Send Message"
+                      )}
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </FadeIn>
         </div>

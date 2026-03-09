@@ -17,6 +17,8 @@ const sora = Sora({
   weight: ["400", "500", "600", "700", "800"],
 });
 
+import { Providers } from "@/components/Providers";
+
 export const metadata: Metadata = {
   title: "Aura AI - Next-Gen Intelligence",
   description: "Premium AI-powered tools for productivity, creativity, and intelligence.",
@@ -36,13 +38,15 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.variable} ${sora.variable} font-display antialiased bg-background text-foreground min-h-screen flex flex-col`}>
-        <TopNavbar />
-        <div className="flex-1 flex flex-col pb-16 lg:pb-0">
-          <PageTransition>
-            {children}
-          </PageTransition>
-        </div>
-        <BottomNav />
+        <Providers>
+          <TopNavbar />
+          <div className="flex-1 flex flex-col pb-16 lg:pb-0">
+            <PageTransition>
+              {children}
+            </PageTransition>
+          </div>
+          <BottomNav />
+        </Providers>
       </body>
     </html>
   );
