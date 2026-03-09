@@ -4,6 +4,7 @@ import Spotlight from "@/components/Spotlight";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/AnimationWrappers";
 import { motion } from "framer-motion";
 import { useSession, signOut } from "next-auth/react";
+import Image from "next/image";
 
 export default function SettingsPage() {
     const { data: session } = useSession();
@@ -24,7 +25,7 @@ export default function SettingsPage() {
                                     >
                                         <div className="w-full h-full rounded-full bg-surface flex items-center justify-center overflow-hidden">
                                             {session?.user?.image ? (
-                                                <img src={session.user.image} alt="Profile" className="w-full h-full object-cover" />
+                                                <Image src={session.user.image} alt="Profile" fill className="object-cover" sizes="128px" priority />
                                             ) : (
                                                 <span className="material-symbols-outlined text-accent text-5xl">person</span>
                                             )}

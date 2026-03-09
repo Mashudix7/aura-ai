@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
+import Image from "next/image";
 
 const navLinks = [
     { href: "/", label: "Home" },
@@ -40,6 +41,7 @@ export default function TopNavbar() {
                             <Link
                                 key={link.href}
                                 href={link.href}
+                                prefetch={false}
                                 className="relative px-5 py-2 rounded-full text-sm font-medium transition-colors"
                             >
                                 {isActive && (
@@ -72,7 +74,7 @@ export default function TopNavbar() {
                         </span>
                     </motion.button>
                     {session ? (
-                        <Link href="/profile">
+                        <Link href="/profile" prefetch={false}>
                             <motion.div
                                 className="h-9 w-9 rounded-xl overflow-hidden bg-accent/15 border border-accent/25 flex items-center justify-center relative"
                                 whileHover={{
@@ -84,7 +86,7 @@ export default function TopNavbar() {
                                 transition={{ duration: 0.2 }}
                             >
                                 {session.user?.image ? (
-                                    <img src={session.user.image} alt="Profile" className="w-full h-full object-cover" />
+                                    <Image src={session.user.image} alt="Profile" fill className="object-cover" sizes="36px" />
                                 ) : (
                                     <span className="text-accent font-bold text-sm">
                                         {session.user?.name?.charAt(0).toUpperCase() || "U"}
@@ -93,7 +95,7 @@ export default function TopNavbar() {
                             </motion.div>
                         </Link>
                     ) : (
-                        <Link href="/login">
+                        <Link href="/login" prefetch={false}>
                             <motion.button
                                 className="px-4 py-2 rounded-xl bg-accent text-background font-black text-sm hover:bg-accent/90 transition-colors shadow-lg"
                                 whileHover={{ scale: 1.05 }}

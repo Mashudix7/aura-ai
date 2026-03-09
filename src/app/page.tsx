@@ -1,16 +1,17 @@
 "use client";
 
-import FeatureCard from "@/components/FeatureCard";
-import PricingCard from "@/components/PricingCard";
-import IntegrationCard from "@/components/IntegrationCard";
-import IntegrationCarousel from "@/components/IntegrationCarousel";
 import Button from "@/components/Button";
-import Footer from "@/components/Footer";
 import Spotlight from "@/components/Spotlight";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/AnimationWrappers";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";
+import dynamic from "next/dynamic";
+
+const FeatureCard = dynamic(() => import("@/components/FeatureCard"), { ssr: false });
+const PricingCard = dynamic(() => import("@/components/PricingCard"), { ssr: false });
+const IntegrationCarousel = dynamic(() => import("@/components/IntegrationCarousel"), { ssr: false });
+const Footer = dynamic(() => import("@/components/Footer"));
 
 const features = [
   {
@@ -132,7 +133,7 @@ export default function HomePage() {
           <FadeIn delay={0.65}>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-                <Link href="/chat" className="block w-full">
+                <Link href="/chat" className="block w-full" prefetch={false}>
                   <Button variant="primary" className="w-full sm:w-auto px-8 py-4 rounded-xl font-black">
                     Start for Free
                   </Button>

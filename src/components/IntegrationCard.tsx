@@ -1,4 +1,5 @@
-// import Image from "next/image";
+// import { motion } from "framer-motion";
+import Image from "next/image";
 
 interface IntegrationCardProps {
     icon: string;
@@ -11,15 +12,16 @@ export default function IntegrationCard({ icon, label, image }: IntegrationCardP
         <div className="relative w-[300px] h-[200px] rounded-2xl overflow-hidden glass-card group cursor-pointer border border-white/10 shrink-0 mx-4">
             {/* Background Image */}
             <div className="absolute inset-0 z-0">
-                <img
+                <Image
                     src={image}
                     alt={label}
-                    className="w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-all duration-500 blur-[2px] group-hover:blur-0 group-hover:scale-105"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 320px"
+                    className="object-cover opacity-40 group-hover:opacity-60 transition-opacity duration-500 will-change-[opacity]"
+                    loading="lazy"
                 />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#050510] via-[#050510]/80 to-transparent z-10" />
             </div>
-
-            {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-surface-dark via-surface-dark/40 to-transparent z-10" />
 
             {/* Aura AI Accents - glow */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-accent/20 rounded-full blur-[50px] mix-blend-screen opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10" />

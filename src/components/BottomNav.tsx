@@ -28,6 +28,7 @@ export default function BottomNav() {
                         <Link
                             key={tab.href}
                             href={tab.href}
+                            prefetch={false}
                             className="relative flex flex-col items-center gap-1 transition-colors px-3 py-1"
                         >
                             {isActive && (
