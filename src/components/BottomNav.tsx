@@ -32,11 +32,7 @@ export default function BottomNav() {
                             className="relative flex flex-col items-center gap-1 transition-colors px-3 py-1"
                         >
                             {isActive && (
-                                <motion.div
-                                    className="absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-accent"
-                                    layoutId="activeBottomTab"
-                                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                                />
+                                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-accent" />
                             )}
                             <motion.span
                                 className={`material-symbols-outlined text-xl ${isActive ? "text-accent" : "text-slate-500"

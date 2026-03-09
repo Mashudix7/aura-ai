@@ -42,20 +42,12 @@ export default function TopNavbar() {
                                 key={link.href}
                                 href={link.href}
                                 prefetch={false}
-                                className="relative px-5 py-2 rounded-full text-sm font-medium transition-colors"
+                                className={`relative px-5 py-2 rounded-full text-sm font-medium transition-colors ${isActive
+                                        ? "bg-accent/15 border border-accent/20 text-accent"
+                                        : "text-slate-400 hover:text-slate-200"
+                                    }`}
                             >
-                                {isActive && (
-                                    <motion.div
-                                        className="absolute inset-0 rounded-full bg-accent/15 border border-accent/20"
-                                        layoutId="activeNavTab"
-                                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                                    />
-                                )}
-                                <span
-                                    className={`relative z-10 ${isActive ? "text-accent" : "text-slate-400 hover:text-slate-200"
-                                        }`}
-                                >
-                                    {link.label}
+                                <span className="relative z-10">
                                 </span>
                             </Link>
                         );
