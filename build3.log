@@ -1,0 +1,69 @@
+﻿
+> aura-ai@0.1.0 build
+> next build
+
+Ôû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env
+
+node.exe : ÔÜá The 
+"middleware" file 
+convention is deprecated. 
+Please use "proxy" 
+instead. Learn more: https
+://nextjs.org/docs/message
+s/middleware-to-proxy
+At C:\Program 
+Files\nodejs\npm.ps1:29 
+char:3
++   & $NODE_EXE 
+$NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (Ô  
+  Üá The "middle...lewa   
+ re-to-proxy:String) [    
+], RemoteException
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+  Creating an optimized production build ...
+Ô£ô Compiled successfully in 5.4s
+  Running TypeScript ...
+Failed to compile.
+
+./src/app/api/chat/route.t
+s:22:23
+Type error: Property 
+'toDataStreamResponse' 
+does not exist on type 'Pr
+omise<StreamTextResult<Rec
+ord<string, CoreTool<any, 
+any>>>>'.
+
+[0m [90m 20 |[39m      
+   })[33m;[39m
+ [90m 21 |[39m
+[31m[1m>[22m[39m[90m 
+22 |[39m         
+[36mreturn[39m result[3
+3m.[39mtoDataStreamRespon
+se()[33m;[39m
+ [90m    |[39m          
+             
+[31m[1m^[22m[39m
+ [90m 23 |[39m     } 
+[36mcatch[39m (error) {
+ [90m 24 |[39m         c
+onsole[33m.[39merror([3
+2m"Chat API 
+Error:"[39m[33m,[39m 
+error)[33m;[39m
+ [90m 25 |[39m         
+[36mreturn[39m [33mNext
+Response[39m[33m.[39mjs
+on([0m
+Next.js build worker 
+exited with code: 1 and 
+signal: null

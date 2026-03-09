@@ -1,0 +1,62 @@
+﻿
+> aura-ai@0.1.0 build
+> next build
+
+Ôû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env
+
+node.exe : ÔÜá The 
+"middleware" file 
+convention is deprecated. 
+Please use "proxy" 
+instead. Learn more: https
+://nextjs.org/docs/message
+s/middleware-to-proxy
+At C:\Program 
+Files\nodejs\npm.ps1:29 
+char:3
++   & $NODE_EXE 
+$NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (Ô  
+  Üá The "middle...lewa   
+ re-to-proxy:String) [    
+], RemoteException
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+  Creating an optimized production build ...
+Ô£ô Compiled successfully in 5.1s
+  Running TypeScript ...
+Failed to compile.
+
+./src/lib/prisma.ts:1:10
+Type error: Module 
+'"@prisma/client"' has no 
+exported member 
+'PrismaClient'.
+
+[0m[31m[1m>[22m[39m[
+90m 1 |[39m 
+[36mimport[39m { 
+[33mPrismaClient[39m } 
+[36mfrom[39m 
+[32m"@prisma/client"[39m
+ [90m   |[39m          
+[31m[1m^[22m[39m
+ [90m 2 |[39m
+ [90m 3 |[39m 
+[36mconst[39m 
+prismaClientSingleton 
+[33m=[39m () 
+[33m=>[39m {
+ [90m 4 |[39m     
+[36mreturn[39m 
+[36mnew[39m [33mPrismaC
+lient[39m()[0m
+Next.js build worker 
+exited with code: 1 and 
+signal: null

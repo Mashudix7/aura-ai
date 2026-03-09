@@ -5,7 +5,7 @@ import Spotlight from "@/components/Spotlight";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/AnimationWrappers";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 
 const FeatureCard = dynamic(() => import("@/components/FeatureCard"), { ssr: false });
@@ -73,10 +73,32 @@ const pricingPlans = [
   },
 ];
 
+// Deterministic seeded random so particles are stable across renders
+function seededRandom(seed: number) {
+  const x = Math.sin(seed + 1) * 10000;
+  return x - Math.floor(x);
+}
+
 export default function HomePage() {
   const [contactForm, setContactForm] = useState({ name: "", email: "", message: "" });
   const [isSubmittingContact, setIsSubmittingContact] = useState(false);
   const [contactSuccess, setContactSuccess] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  const particles = useMemo(() =>
+    [...Array(20)].map((_, i) => ({
+      top: seededRandom(i * 3) * 100,
+      left: seededRandom(i * 3 + 1) * 100,
+      yMove: -(seededRandom(i * 3 + 2) * 100 + 50),
+      xMove: (seededRandom(i * 3 + 3) - 0.5) * 50,
+      opacity: seededRandom(i * 3 + 4) * 0.8 + 0.2,
+      scale: seededRandom(i * 3 + 5) * 2 + 1,
+      duration: seededRandom(i * 3 + 6) * 5 + 5,
+      delay: seededRandom(i * 3 + 7) * 5,
+    })),
+    []);
 
   const handleContactSubmit = async () => {
     if (!contactForm.name || !contactForm.email || !contactForm.message) return;
@@ -136,25 +158,22 @@ export default function HomePage() {
             }}
           />
 
-          {/* Floating Particles */}
-          {[...Array(20)].map((_, i) => (
+          {/* Floating Particles - only rendered client-side to avoid hydration mismatch */}
+          {mounted && particles.map((p, i) => (
             <motion.div
               key={i}
               className="absolute w-1 h-1 bg-accent/40 rounded-full"
-              style={{
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
-              }}
+              style={{ top: `${p.top}%`, left: `${p.left}%` }}
               animate={{
-                y: [0, Math.random() * -100 - 50],
-                x: [0, (Math.random() - 0.5) * 50],
-                opacity: [0, Math.random() * 0.8 + 0.2, 0],
-                scale: [0, Math.random() * 2 + 1, 0],
+                y: [0, p.yMove],
+                x: [0, p.xMove],
+                opacity: [0, p.opacity, 0],
+                scale: [0, p.scale, 0],
               }}
               transition={{
-                duration: Math.random() * 5 + 5,
+                duration: p.duration,
                 repeat: Infinity,
-                delay: Math.random() * 5,
+                delay: p.delay,
                 ease: "easeInOut",
               }}
             />
@@ -205,112 +224,68 @@ export default function HomePage() {
           </FadeIn>
         </div>
 
-        {/* Hero Image */}
+        {/* Hero Demo Preview */}
         <FadeIn delay={0.8} className="mt-20 max-w-5xl mx-auto px-4">
           <motion.div
-            className="relative rounded-2xl border border-white/10 overflow-hidden glass-card group"
-            whileHover={{ boxShadow: "0 0 40px rgba(255,215,0,0.08)" }}
+            className="relative rounded-2xl border border-white/10 overflow-hidden shadow-2xl"
+            whileHover={{ boxShadow: "0 0 60px rgba(255,215,0,0.10)" }}
           >
-            <div className="absolute inset-0 bg-gradient-to-tr from-accent/5 via-transparent to-accent/5" />
-            <div className="w-full h-64 md:h-96 bg-gradient-to-br from-surface to-background flex items-center justify-center">
-              {/* Removed smart_toy icon to avoid overlap with play button */}
+            {/* Window chrome */}
+            <div className="bg-white/5 px-4 py-3 border-b border-white/10 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500/60" />
+                <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
+                <div className="w-3 h-3 rounded-full bg-green-500/60" />
+              </div>
+              <div className="text-xs font-mono text-slate-500 uppercase tracking-widest">Aura v4.0 — New Thread</div>
+              <div className="w-16" />
             </div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <motion.div
-                className="w-20 h-20 rounded-full glass flex items-center justify-center cursor-pointer border border-accent/30"
-                whileHover={{
-                  scale: 1.15,
-                  boxShadow: "0 0 30px rgba(255,215,0,0.3)",
-                }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <span className="material-symbols-outlined text-accent text-4xl">
-                  play_arrow
-                </span>
+
+            {/* Chat preview body */}
+            <div className="bg-[#0a0a0e] p-6 md:p-8 min-h-[280px] md:min-h-[340px] flex flex-col gap-5">
+              {/* User message */}
+              <motion.div className="flex gap-3 items-start" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.0, duration: 0.5 }}>
+                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-slate-400 text-sm">person</span>
+                </div>
+                <div className="bg-white/5 border border-white/8 px-4 py-3 rounded-2xl rounded-tl-none max-w-[75%]">
+                  <p className="text-slate-200 text-sm">Analyze market positioning for a luxury AI platform targeting C-suite executives.</p>
+                </div>
+              </motion.div>
+
+              {/* AI response */}
+              <motion.div className="flex gap-3 items-start flex-row-reverse" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.6, duration: 0.5 }}>
+                <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-background text-sm">auto_awesome</span>
+                </div>
+                <div className="bg-accent/8 border border-accent/15 px-4 py-3 rounded-2xl rounded-tr-none max-w-[75%]">
+                  <p className="text-accent text-xs font-bold mb-2">Aura AI</p>
+                  <p className="text-slate-300 text-sm leading-relaxed">Positioning should center on <span className="text-accent font-semibold">exclusivity</span>, <span className="text-accent font-semibold">precision</span>, and measurable ROI. A three-tier approach: executive briefings, white-glove onboarding, and quarterly performance reporting…</p>
+                </div>
+              </motion.div>
+
+              {/* Typing indicator */}
+              <motion.div className="flex gap-3 items-center flex-row-reverse" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2.4, duration: 0.4 }}>
+                <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-background text-sm">auto_awesome</span>
+                </div>
+                <div className="bg-accent/8 border border-accent/15 px-4 py-3 rounded-2xl rounded-tr-none flex gap-1.5 items-center">
+                  {[0, 0.2, 0.4].map((d, i) => (
+                    <motion.div key={i} className="w-1.5 h-1.5 rounded-full bg-accent/60"
+                      animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+                      transition={{ duration: 0.8, repeat: Infinity, delay: d }}
+                    />
+                  ))}
+                </div>
               </motion.div>
             </div>
+
+            {/* Glow overlay at bottom */}
+            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background/80 to-transparent pointer-events-none" />
           </motion.div>
         </FadeIn>
       </section>
 
-      {/* Demo Section */}
-      <section className="py-24 relative" id="demo">
-        <div className="max-w-4xl mx-auto px-4">
-          <FadeIn className="text-center mb-16">
-            <h2 className="text-4xl font-black mb-4 text-transparent bg-clip-text bg-gradient-to-r from-accent via-yellow-200 to-accent">Interactive Intelligence</h2>
-            <p className="text-slate-400">
-              Experience how Aura thinks and reacts in real-time.
-            </p>
-          </FadeIn>
-          <FadeIn delay={0.2}>
-            <motion.div
-              className="glass border border-white/10 rounded-2xl overflow-hidden shadow-2xl"
-              whileHover={{ boxShadow: "0 0 40px rgba(255,215,0,0.06)" }}
-            >
-              {/* Window chrome */}
-              <div className="bg-white/5 p-4 border-b border-white/10 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 rounded-full bg-red-500/50" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
-                  <div className="w-3 h-3 rounded-full bg-green-500/50" />
-                </div>
-                <div className="text-xs font-mono text-slate-500 uppercase tracking-widest">
-                  Aura v4.0 Active
-                </div>
-              </div>
-              {/* Chat Messages */}
-              <div className="p-4 md:p-6 space-y-4 md:space-y-6 min-h-[300px] md:min-h-[400px]">
-                <div className="flex gap-3 md:gap-4">
-                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-accent/20 flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-accent text-sm md:text-base">person</span>
-                  </div>
-                  <div className="bg-white/5 p-3 md:p-4 rounded-2xl rounded-tl-none border border-white/5 max-w-[85%] md:max-w-[80%]">
-                    <p className="text-xs md:text-sm">
-                      Optimize my landing page copy for a high-end luxury audience.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-3 md:gap-4 flex-row-reverse">
-                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-accent flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-background text-sm md:text-base">auto_awesome</span>
-                  </div>
-                  <div className="bg-accent/10 p-3 md:p-4 rounded-2xl rounded-tr-none border border-accent/20 max-w-[85%] md:max-w-[80%] text-right md:text-left">
-                    <p className="text-xs md:text-sm text-accent font-bold mb-1 md:mb-2">Aura AI</p>
-                    <p className="text-xs md:text-sm leading-relaxed">
-                      Analyzing luxury market trends... For a high-end feel, we should
-                      focus on exclusivity, heritage, and minimalist aesthetics. I
-                      recommend using high-contrast typography and subtle golden accents
-                      to symbolize value without being ostentatious.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-3 md:gap-4">
-                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-accent/20 flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-accent text-sm md:text-base">person</span>
-                  </div>
-                  <div className="bg-white/5 p-3 md:p-4 rounded-2xl rounded-tl-none border border-white/5 max-w-[85%] md:max-w-[80%]">
-                    <p className="text-xs md:text-sm">
-                      That&apos;s perfect. Generate a color palette for this vision.
-                    </p>
-                  </div>
-                </div>
-              </div>
-              {/* Input */}
-              <div className="p-3 md:p-4 bg-white/5 border-t border-white/10 flex items-center gap-2 md:gap-3">
-                <input
-                  className="flex-1 bg-transparent border-none focus:ring-0 text-sm placeholder:text-slate-600 outline-none"
-                  placeholder="Type your prompt..."
-                  type="text"
-                  readOnly
-                />
-                <button className="w-10 h-10 bg-accent rounded-lg flex items-center justify-center text-background hover:scale-105 transition-transform">
-                  <span className="material-symbols-outlined">send</span>
-                </button>
-              </div>
-            </motion.div>
-          </FadeIn>
-        </div>
-      </section>
 
       {/* Features Section */}
       <section className="py-24 bg-surface" id="features">

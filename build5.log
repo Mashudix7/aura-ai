@@ -1,0 +1,146 @@
+﻿
+> aura-ai@0.1.0 build
+> next build
+
+Ôû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env
+
+node.exe : ÔÜá The 
+"middleware" file 
+convention is deprecated. 
+Please use "proxy" 
+instead. Learn more: https
+://nextjs.org/docs/message
+s/middleware-to-proxy
+At C:\Program 
+Files\nodejs\npm.ps1:29 
+char:3
++   & $NODE_EXE 
+$NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (Ô  
+  Üá The "middle...lewa   
+ re-to-proxy:String) [    
+], RemoteException
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+  Creating an optimized production build ...
+Ô£ô Compiled successfully in 7.6s
+  Running TypeScript ...
+  Collecting page data using 11 workers ...
+Error: Failed to load 
+external module @prisma/cl
+ient-2c3a283f134fdcb6: 
+Error: Cannot find module 
+'.prisma/client/default'
+Require stack:
+- C:\Users\mashu\.gemini\a
+ntigravity\scratch\aura-ai
+\node_modules\@prisma\clie
+nt\default.js
+- C:\Users\mashu\.gemini\a
+ntigravity\scratch\aura-ai
+\.next\server\chunks\[root
+-of-the-server]__0961348c.
+_.js
+- C:\Users\mashu\.gemini\a
+ntigravity\scratch\aura-ai
+\.next\server\chunks\[turb
+opack]_runtime.js
+- C:\Users\mashu\.gemini\a
+ntigravity\scratch\aura-ai
+\.next\server\app\api\user
+\subscription\route.js
+- C:\Users\mashu\.gemini\a
+ntigravity\scratch\aura-ai
+\node_modules\next\dist\se
+rver\require.js
+- C:\Users\mashu\.gemini\a
+ntigravity\scratch\aura-ai
+\node_modules\next\dist\se
+rver\load-components.js
+- C:\Users\mashu\.gemini\a
+ntigravity\scratch\aura-ai
+\node_modules\next\dist\bu
+ild\utils.js
+- C:\Users\mashu\.gemini\a
+ntigravity\scratch\aura-ai
+\node_modules\next\dist\bu
+ild\worker.js
+- C:\Users\mashu\.gemini\a
+ntigravity\scratch\aura-ai
+\node_modules\next\dist\co
+mpiled\jest-worker\process
+Child.js
+    at 
+Context.externalRequire 
+[as x] (C:\Users\mashu\.ge
+mini\antigravity\scratch\a
+ura-ai\.next\server\chunks
+\[turbopack]_runtime.js:53
+5:15)
+    at module evaluation (
+C:\Users\mashu\.gemini\ant
+igravity\scratch\aura-ai\.
+next\server\chunks\[root-o
+f-the-server]__0961348c._.
+js:1:1063)
+    at instantiateModule (
+C:\Users\mashu\.gemini\ant
+igravity\scratch\aura-ai\.
+next\server\chunks\[turbop
+ack]_runtime.js:740:9)
+    at getOrInstantiateMod
+uleFromParent (C:\Users\ma
+shu\.gemini\antigravity\sc
+ratch\aura-ai\.next\server
+\chunks\[turbopack]_runtim
+e.js:763:12)
+    at 
+Context.commonJsRequire 
+[as r] (C:\Users\mashu\.ge
+mini\antigravity\scratch\a
+ura-ai\.next\server\chunks
+\[turbopack]_runtime.js:24
+9:12)
+    at module evaluation (
+C:\Users\mashu\.gemini\ant
+igravity\scratch\aura-ai\.
+next\server\chunks\[root-o
+f-the-server]__0961348c._.
+js:1:1193)
+    at instantiateModule (
+C:\Users\mashu\.gemini\ant
+igravity\scratch\aura-ai\.
+next\server\chunks\[turbop
+ack]_runtime.js:740:9)
+    at getOrInstantiateMod
+uleFromParent (C:\Users\ma
+shu\.gemini\antigravity\sc
+ratch\aura-ai\.next\server
+\chunks\[turbopack]_runtim
+e.js:763:12)
+    at Context.esmImport 
+[as i] (C:\Users\mashu\.ge
+mini\antigravity\scratch\a
+ura-ai\.next\server\chunks
+\[turbopack]_runtime.js:22
+8:20)
+    at module evaluation (
+C:\Users\mashu\.gemini\ant
+igravity\scratch\aura-ai\.
+next\server\chunks\_e87708
+e8._.js:404:61139)
+
+> Build error occurred
+Error: Failed to collect 
+page data for 
+/api/user/subscription
+    at ignore-listed 
+frames {
+  type: 'Error'
+}
