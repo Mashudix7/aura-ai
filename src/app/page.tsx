@@ -104,9 +104,65 @@ export default function HomePage() {
   return (
     <>
       {/* Hero Section */}
-      <section className="relative pt-24 pb-20 overflow-hidden">
+      <section className="relative pt-24 pb-20 overflow-hidden min-h-[90vh] flex flex-col justify-center">
+        {/* Dynamic Animated Background */}
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+          {/* Animated Gradients */}
+          <motion.div
+            className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-accent/10 blur-[120px]"
+            animate={{
+              x: [0, 100, 0],
+              y: [0, 50, 0],
+              scale: [1, 1.2, 1],
+            }}
+            transition={{
+              duration: 15,
+              repeat: Infinity,
+              ease: "linear"
+            }}
+          />
+          <motion.div
+            className="absolute top-[40%] -right-[10%] w-[40%] h-[60%] rounded-full bg-yellow-500/10 blur-[150px]"
+            animate={{
+              x: [0, -100, 0],
+              y: [0, -50, 0],
+              scale: [1, 1.5, 1],
+            }}
+            transition={{
+              duration: 20,
+              repeat: Infinity,
+              ease: "linear",
+              delay: 2
+            }}
+          />
+
+          {/* Floating Particles */}
+          {[...Array(20)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-1 h-1 bg-accent/40 rounded-full"
+              style={{
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+              }}
+              animate={{
+                y: [0, Math.random() * -100 - 50],
+                x: [0, (Math.random() - 0.5) * 50],
+                opacity: [0, Math.random() * 0.8 + 0.2, 0],
+                scale: [0, Math.random() * 2 + 1, 0],
+              }}
+              transition={{
+                duration: Math.random() * 5 + 5,
+                repeat: Infinity,
+                delay: Math.random() * 5,
+                ease: "easeInOut",
+              }}
+            />
+          ))}
+        </div>
+
         <Spotlight />
-        <div className="max-w-7xl mx-auto px-4 text-center relative z-10">
+        <div className="max-w-7xl mx-auto px-4 text-center relative z-10 w-full">
           <FadeIn delay={0.2}>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-bold uppercase tracking-widest mb-8">
               <span className="relative flex h-2 w-2">
