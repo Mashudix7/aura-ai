@@ -39,7 +39,7 @@ export default function TopNavbar() {
                 <AuthTrigger setAuthOpen={setAuthOpen} />
             </Suspense>
             <motion.nav
-                className="sticky top-6 z-50 mx-4 md:mx-auto w-[calc(100%-2rem)] md:max-w-7xl xl:max-w-[95%] rounded-full border border-white/[0.08] bg-black/40 backdrop-blur-2xl shadow-[0_16px_40px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.05)] text-slate-100"
+                className="fixed top-6 left-0 right-0 z-50 mx-4 md:mx-auto w-[calc(100%-2rem)] md:max-w-7xl xl:max-w-[95%] rounded-full border border-white/[0.08] bg-black/40 backdrop-blur-2xl shadow-[0_16px_40px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.05)] text-slate-100"
                 initial={{ y: -80, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.1 }}
@@ -49,7 +49,7 @@ export default function TopNavbar() {
                     <Link href="/" className="flex items-center gap-2 group ml-1">
                         <span className="text-2xl tracking-tight text-white group-hover:text-accent transition-colors flex items-center">
                             <span className="font-sora font-semibold">Aura </span>
-                            <span className="font-sora font-extrabold">AI</span>
+                            <span className="font-sora font-extrabold text-accent drop-shadow-[0_0_10px_rgba(255,215,0,0.5)]">AI</span>
                         </span>
                     </Link>
 
@@ -57,6 +57,8 @@ export default function TopNavbar() {
                     <div className="hidden md:flex items-center gap-1 bg-white/[0.03] rounded-full px-1.5 py-1 border border-white/[0.06]">
                         {navLinks.map((link) => {
                             const isActive = pathname === link.href;
+                            const isChat = link.label === "Chat";
+
                             return (
                                 <Link
                                     key={link.href}
@@ -64,7 +66,9 @@ export default function TopNavbar() {
                                     prefetch={false}
                                     className={`relative px-5 py-2 rounded-full text-sm font-medium transition-all ${isActive
                                         ? "bg-accent/15 border border-accent/20 text-accent"
-                                        : "text-slate-400 hover:text-slate-200"
+                                        : isChat
+                                            ? "text-accent border-b-2 border-accent ml-2 rounded-none px-2 py-1 mx-3"
+                                            : "text-slate-400 hover:text-slate-200"
                                         }`}
                                 >
                                     {link.label}

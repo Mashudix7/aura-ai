@@ -3,7 +3,7 @@
 import Button from "@/components/Button";
 import Spotlight from "@/components/Spotlight";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/AnimationWrappers";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
@@ -12,6 +12,7 @@ const FeatureCard = dynamic(() => import("@/components/FeatureCard"), { ssr: fal
 const PricingCard = dynamic(() => import("@/components/PricingCard"), { ssr: false });
 const IntegrationCarousel = dynamic(() => import("@/components/IntegrationCarousel"), { ssr: false });
 const Footer = dynamic(() => import("@/components/Footer"));
+const GeometricElement = dynamic(() => import("@/components/GeometricElement"), { ssr: false });
 
 const features = [
   {
@@ -47,12 +48,12 @@ const pricingPlans = [
     period: "/ forever",
     description: "Perfect for exploring the basics of generative intelligence.",
     features: [
-      { text: "10 prompts per day", included: true },
-      { text: "Basic AI model access", included: true },
-      { text: "Priority server access", included: false },
-      { text: "File & document uploads", included: false },
+      { text: "10 prompts per day", included: true, icon: "check_circle" },
+      { text: "Basic AI model access", included: true, icon: "check_circle" },
+      { text: "Priority server access", included: false, icon: "block" },
+      { text: "File & document uploads", included: false, icon: "block" },
     ],
-    cta: "Get Started",
+    cta: "Start Free",
     href: "/chat",
     highlighted: false,
   },
@@ -62,14 +63,16 @@ const pricingPlans = [
     period: "/ month",
     description: "The ultimate suite for professionals and power users.",
     features: [
-      { text: "Unlimited prompts", included: true },
-      { text: "Ultra-fast response time", included: true },
-      { text: "Advanced file & data uploads", included: true },
-      { text: "Priority server access (No wait)", included: true },
-      { text: "Latest premium AI models", included: true },
+      { text: "Unlimited prompts", included: true, icon: "stars" },
+      { text: "Ultra-fast response time", included: true, icon: "bolt" },
+      { text: "Advanced file & data uploads", included: true, icon: "upload_file" },
+      { text: "Priority server access (No wait)", included: true, icon: "lan" },
+      { text: "Latest premium AI models", included: true, icon: "psychology" },
     ],
     cta: "Subscribe with Mayar",
     href: "/checkout",
+    highlighted: true,
+    badge: "Best Value"
   },
 ];
 
@@ -84,6 +87,15 @@ export default function HomePage() {
   const [isSubmittingContact, setIsSubmittingContact] = useState(false);
   const [contactSuccess, setContactSuccess] = useState(false);
   const [mounted, setMounted] = useState(false);
+
+  // Parallax Scroll Values
+  const { scrollY } = useScroll();
+  const bgParallaxY = useTransform(scrollY, [0, 1000], ["0%", "25%"]);
+  const textParallaxY = useTransform(scrollY, [0, 1000], ["0%", "40%"]);
+  const heroOpacity = useTransform(scrollY, [0, 500], [1, 0]);
+  const previewParallaxY = useTransform(scrollY, [0, 1000], ["0%", "15%"]);
+  const geo1ParallaxY = useTransform(scrollY, [0, 1000], ["-50%", "-10%"]);
+  const geo2ParallaxY = useTransform(scrollY, [0, 1000], ["-50%", "-90%"]);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -128,7 +140,10 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative pt-24 pb-20 overflow-hidden min-h-[90vh] flex flex-col justify-center">
         {/* Dynamic Animated Background */}
-        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <motion.div
+          className="absolute inset-0 z-0 overflow-hidden pointer-events-none"
+          style={{ y: bgParallaxY, opacity: heroOpacity }}
+        >
           {/* Animated Gradients */}
           <motion.div
             className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-accent/10 blur-[120px]"
@@ -178,10 +193,27 @@ export default function HomePage() {
               }}
             />
           ))}
-        </div>
+        </motion.div>
+
+        {/* 3D Geometric Art */}
+        <motion.div
+          className="absolute top-[35%] right-[10%] opacity-60 z-0 pointer-events-none hidden lg:flex"
+          style={{ y: geo1ParallaxY }}
+        >
+          <GeometricElement />
+        </motion.div>
+        <motion.div
+          className="absolute top-[65%] left-[5%] opacity-30 z-0 pointer-events-none hidden lg:flex scale-75"
+          style={{ y: geo2ParallaxY }}
+        >
+          <GeometricElement />
+        </motion.div>
 
         <Spotlight />
-        <div className="max-w-7xl mx-auto px-4 text-center relative z-10 w-full">
+        <motion.div
+          className="max-w-7xl mx-auto px-4 text-center relative z-10 w-full pt-16 md:pt-24"
+          style={{ y: textParallaxY, opacity: heroOpacity }}
+        >
           <FadeIn delay={0.2}>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-bold uppercase tracking-widest mb-8">
               <span className="relative flex h-2 w-2">
@@ -222,68 +254,70 @@ export default function HomePage() {
               </motion.div>
             </div>
           </FadeIn>
-        </div>
+        </motion.div>
 
         {/* Hero Demo Preview */}
-        <FadeIn delay={0.8} className="mt-20 max-w-5xl mx-auto px-4">
-          <motion.div
-            className="relative rounded-2xl border border-white/10 overflow-hidden shadow-2xl"
-            whileHover={{ boxShadow: "0 0 60px rgba(255,215,0,0.10)" }}
-          >
-            {/* Window chrome */}
-            <div className="bg-white/5 px-4 py-3 border-b border-white/10 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500/60" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
-                <div className="w-3 h-3 rounded-full bg-green-500/60" />
+        <motion.div style={{ y: previewParallaxY }}>
+          <FadeIn delay={0.8} className="mt-20 max-w-5xl mx-auto px-4">
+            <motion.div
+              className="relative rounded-2xl border border-white/10 overflow-hidden shadow-2xl"
+              whileHover={{ boxShadow: "0 0 60px rgba(255,215,0,0.10)" }}
+            >
+              {/* Window chrome */}
+              <div className="bg-white/5 px-4 py-3 border-b border-white/10 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500/60" />
+                  <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
+                  <div className="w-3 h-3 rounded-full bg-green-500/60" />
+                </div>
+                <div className="text-xs font-mono text-slate-500 uppercase tracking-widest">Aura v4.0 — New Thread</div>
+                <div className="w-16" />
               </div>
-              <div className="text-xs font-mono text-slate-500 uppercase tracking-widest">Aura v4.0 — New Thread</div>
-              <div className="w-16" />
-            </div>
 
-            {/* Chat preview body */}
-            <div className="bg-[#0a0a0e] p-6 md:p-8 min-h-[280px] md:min-h-[340px] flex flex-col gap-5">
-              {/* User message */}
-              <motion.div className="flex gap-3 items-start" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.0, duration: 0.5 }}>
-                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-slate-400 text-sm">person</span>
-                </div>
-                <div className="bg-white/5 border border-white/8 px-4 py-3 rounded-2xl rounded-tl-none max-w-[75%]">
-                  <p className="text-slate-200 text-sm">Analyze market positioning for a luxury AI platform targeting C-suite executives.</p>
-                </div>
-              </motion.div>
+              {/* Chat preview body */}
+              <div className="bg-[#0a0a0e] p-6 md:p-8 min-h-[280px] md:min-h-[340px] flex flex-col gap-5">
+                {/* User message */}
+                <motion.div className="flex gap-3 items-start" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.0, duration: 0.5 }}>
+                  <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-slate-400 text-sm">person</span>
+                  </div>
+                  <div className="bg-white/5 border border-white/8 px-4 py-3 rounded-2xl rounded-tl-none max-w-[75%]">
+                    <p className="text-slate-200 text-sm">Analyze market positioning for a luxury AI platform targeting C-suite executives.</p>
+                  </div>
+                </motion.div>
 
-              {/* AI response */}
-              <motion.div className="flex gap-3 items-start flex-row-reverse" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.6, duration: 0.5 }}>
-                <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-background text-sm">auto_awesome</span>
-                </div>
-                <div className="bg-accent/8 border border-accent/15 px-4 py-3 rounded-2xl rounded-tr-none max-w-[75%]">
-                  <p className="text-accent text-xs font-bold mb-2">Aura AI</p>
-                  <p className="text-slate-300 text-sm leading-relaxed">Positioning should center on <span className="text-accent font-semibold">exclusivity</span>, <span className="text-accent font-semibold">precision</span>, and measurable ROI. A three-tier approach: executive briefings, white-glove onboarding, and quarterly performance reporting…</p>
-                </div>
-              </motion.div>
+                {/* AI response */}
+                <motion.div className="flex gap-3 items-start flex-row-reverse" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.6, duration: 0.5 }}>
+                  <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-background text-sm">auto_awesome</span>
+                  </div>
+                  <div className="bg-accent/8 border border-accent/15 px-4 py-3 rounded-2xl rounded-tr-none max-w-[75%]">
+                    <p className="text-accent text-xs font-bold mb-2">Aura AI</p>
+                    <p className="text-slate-300 text-sm leading-relaxed">Positioning should center on <span className="text-accent font-semibold">exclusivity</span>, <span className="text-accent font-semibold">precision</span>, and measurable ROI. A three-tier approach: executive briefings, white-glove onboarding, and quarterly performance reporting…</p>
+                  </div>
+                </motion.div>
 
-              {/* Typing indicator */}
-              <motion.div className="flex gap-3 items-center flex-row-reverse" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2.4, duration: 0.4 }}>
-                <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-background text-sm">auto_awesome</span>
-                </div>
-                <div className="bg-accent/8 border border-accent/15 px-4 py-3 rounded-2xl rounded-tr-none flex gap-1.5 items-center">
-                  {[0, 0.2, 0.4].map((d, i) => (
-                    <motion.div key={i} className="w-1.5 h-1.5 rounded-full bg-accent/60"
-                      animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
-                      transition={{ duration: 0.8, repeat: Infinity, delay: d }}
-                    />
-                  ))}
-                </div>
-              </motion.div>
-            </div>
+                {/* Typing indicator */}
+                <motion.div className="flex gap-3 items-center flex-row-reverse" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2.4, duration: 0.4 }}>
+                  <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-background text-sm">auto_awesome</span>
+                  </div>
+                  <div className="bg-accent/8 border border-accent/15 px-4 py-3 rounded-2xl rounded-tr-none flex gap-1.5 items-center">
+                    {[0, 0.2, 0.4].map((d, i) => (
+                      <motion.div key={i} className="w-1.5 h-1.5 rounded-full bg-accent/60"
+                        animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+                        transition={{ duration: 0.8, repeat: Infinity, delay: d }}
+                      />
+                    ))}
+                  </div>
+                </motion.div>
+              </div>
 
-            {/* Glow overlay at bottom */}
-            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background/80 to-transparent pointer-events-none" />
-          </motion.div>
-        </FadeIn>
+              {/* Glow overlay at bottom */}
+              <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background/80 to-transparent pointer-events-none" />
+            </motion.div>
+          </FadeIn>
+        </motion.div>
       </section>
 
 
@@ -351,7 +385,7 @@ export default function HomePage() {
             </p>
           </FadeIn>
           <FadeIn delay={0.2}>
-            <div className="bg-[#0f0f11] border border-white/5 rounded-3xl p-8 max-w-2xl mx-auto text-left flex flex-col gap-6 shadow-2xl relative overflow-hidden">
+            <div className="bg-[#0f0f11] border border-white/5 rounded-3xl p-8 md:p-12 max-w-4xl mx-auto text-left flex flex-col gap-6 shadow-2xl relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
 
               <AnimatePresence mode="wait">

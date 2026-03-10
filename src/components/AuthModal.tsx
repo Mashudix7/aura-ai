@@ -146,85 +146,97 @@ export default function AuthModal({ isOpen, onClose, initialTab = "signin" }: Au
                             </div>
 
                             {/* Form */}
-                            <div className="px-8 pb-8">
+                            <div className="px-8 pb-8 relative overflow-hidden min-h-[340px]">
                                 {error && (
                                     <motion.div
                                         initial={{ opacity: 0, y: -6 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className="bg-red-500/10 border border-red-500/25 text-red-400 px-4 py-3 rounded-xl text-sm mb-5"
+                                        className="bg-red-500/10 border border-red-500/25 text-red-400 px-4 py-3 rounded-xl text-sm mb-5 relative z-20"
                                     >
                                         {error}
                                     </motion.div>
                                 )}
 
-                                <form onSubmit={tab === "signin" ? handleSignIn : handleSignUp} className="space-y-4">
-                                    {tab === "signup" && (
+                                <AnimatePresence mode="popLayout" initial={false}>
+                                    <motion.form
+                                        key={tab}
+                                        initial={{ opacity: 0, x: tab === "signin" ? -40 : 40 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: tab === "signin" ? 40 : -40 }}
+                                        transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                                        onSubmit={tab === "signin" ? handleSignIn : handleSignUp}
+                                        className="space-y-4 w-full"
+                                    >
+                                        {tab === "signup" && (
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-400 mb-1.5 block">Full Name</label>
+                                                <input
+                                                    type="text"
+                                                    value={name}
+                                                    onChange={(e) => setName(e.target.value)}
+                                                    required
+                                                    className="w-full bg-black/40 border border-white/8 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-accent/40 transition-colors placeholder:text-slate-600"
+                                                    placeholder="John Doe"
+                                                />
+                                            </div>
+                                        )}
                                         <div>
-                                            <label className="text-xs font-bold text-slate-400 mb-1.5 block">Full Name</label>
+                                            <label className="text-xs font-bold text-slate-400 mb-1.5 block">Email Address</label>
                                             <input
-                                                type="text"
-                                                value={name}
-                                                onChange={(e) => setName(e.target.value)}
+                                                type="email"
+                                                value={email}
+                                                onChange={(e) => setEmail(e.target.value)}
                                                 required
                                                 className="w-full bg-black/40 border border-white/8 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-accent/40 transition-colors placeholder:text-slate-600"
-                                                placeholder="John Doe"
+                                                placeholder="name@example.com"
                                             />
                                         </div>
-                                    )}
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-400 mb-1.5 block">Email Address</label>
-                                        <input
-                                            type="email"
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                            required
-                                            className="w-full bg-black/40 border border-white/8 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-accent/40 transition-colors placeholder:text-slate-600"
-                                            placeholder="name@example.com"
-                                        />
-                                    </div>
-                                    <div>
-                                        <div className="flex justify-between items-center mb-1.5">
-                                            <label className="text-xs font-bold text-slate-400">Password</label>
-                                            {tab === "signin" && (
-                                                <button type="button" className="text-xs text-accent/70 hover:text-accent">Forgot password?</button>
-                                            )}
+                                        <div>
+                                            <div className="flex justify-between items-center mb-1.5">
+                                                <label className="text-xs font-bold text-slate-400">Password</label>
+                                                {tab === "signin" && (
+                                                    <button type="button" className="text-xs text-accent/70 hover:text-accent font-medium">Forgot password?</button>
+                                                )}
+                                            </div>
+                                            <input
+                                                type="password"
+                                                value={password}
+                                                onChange={(e) => setPassword(e.target.value)}
+                                                required
+                                                minLength={tab === "signup" ? 6 : undefined}
+                                                className="w-full bg-black/40 border border-white/8 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-accent/40 transition-colors placeholder:text-slate-600"
+                                                placeholder="••••••••"
+                                            />
                                         </div>
-                                        <input
-                                            type="password"
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            required
-                                            minLength={tab === "signup" ? 6 : undefined}
-                                            className="w-full bg-black/40 border border-white/8 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-accent/40 transition-colors placeholder:text-slate-600"
-                                            placeholder="••••••••"
-                                        />
-                                    </div>
 
-                                    <button
-                                        type="submit"
-                                        disabled={isLoading}
-                                        className="w-full py-3.5 mt-2 rounded-xl bg-accent hover:bg-accent/90 text-background font-black text-sm transition-all shadow-[0_0_20px_rgba(255,215,0,0.2)] flex items-center justify-center gap-2"
-                                    >
-                                        {isLoading ? (
-                                            <span className="material-symbols-outlined animate-spin text-sm">refresh</span>
-                                        ) : (
-                                            <>
-                                                {tab === "signin" ? "Sign In" : "Create Account"}
-                                                <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                                            </>
-                                        )}
-                                    </button>
-                                </form>
+                                        <button
+                                            type="submit"
+                                            disabled={isLoading}
+                                            className="w-full py-3.5 mt-2 rounded-xl bg-accent hover:bg-accent/90 text-background font-black text-sm transition-all shadow-[0_0_20px_rgba(255,215,0,0.2)] flex items-center justify-center gap-2"
+                                        >
+                                            {isLoading ? (
+                                                <span className="material-symbols-outlined animate-spin text-sm">refresh</span>
+                                            ) : (
+                                                <>
+                                                    {tab === "signin" ? "Sign In" : "Create Account"}
+                                                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </motion.form>
+                                </AnimatePresence>
 
-                                <p className="text-center text-xs text-slate-500 mt-5">
-                                    {tab === "signin" ? "Don't have an account? " : "Already have an account? "}
-                                    <button
-                                        onClick={() => switchTab(tab === "signin" ? "signup" : "signin")}
-                                        className="text-accent font-bold hover:underline"
-                                    >
-                                        {tab === "signin" ? "Sign Up" : "Sign In"}
-                                    </button>
-                                </p>
+                                <div className="absolute bottom-6 left-0 right-0 px-8">
+                                    <p className="text-center text-xs text-slate-500 mt-5">
+                                        {tab === "signin" ? "Don't have an account? " : "Already have an account? "}
+                                        <button
+                                            onClick={() => switchTab(tab === "signin" ? "signup" : "signin")}
+                                            className="text-accent font-bold hover:underline"
+                                        >
+                                            {tab === "signin" ? "Sign Up" : "Sign In"}
+                                        </button>
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </motion.div>

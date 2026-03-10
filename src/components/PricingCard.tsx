@@ -1,14 +1,19 @@
 "use client";
 
-import { motion } from "framer-motion";
 import Link from "next/link";
+
+interface PricingFeature {
+    text: string;
+    included?: boolean;
+    icon?: string;
+}
 
 interface PricingCardProps {
     name: string;
     price: string;
     period: string;
     description: string;
-    features: { text: string; included: boolean }[];
+    features: PricingFeature[];
     cta: string;
     href?: string;
     highlighted?: boolean;
@@ -26,88 +31,58 @@ export default function PricingCard({
     highlighted = false,
     badge,
 }: PricingCardProps) {
-    const ButtonComponent = (
-        <motion.button
-            className={`w-full py-3 rounded-xl font-bold text-sm transition-all text-center block ${highlighted
-                ? "bg-accent text-background"
-                : "border border-white/15 text-slate-100 hover:bg-white/5"
-                }`}
-            whileHover={{
-                scale: 1.02,
-                boxShadow: highlighted ? "0 0 25px rgba(255,215,0,0.3)" : undefined,
-            }}
-            whileTap={{ scale: 0.98 }}
-        >
-            {cta}
-        </motion.button>
-    );
-
     return (
-        <motion.div
-            className={`relative rounded-2xl p-8 border flex flex-col h-full ${highlighted
-                ? "glass border-accent/40 bg-gradient-to-br from-accent/10 via-transparent to-accent/5"
-                : "glass border-white/10"
-                }`}
-            whileHover={{
-                borderColor: highlighted
-                    ? "rgba(255,215,0,0.6)"
-                    : "rgba(255,215,0,0.3)",
-                boxShadow: highlighted
-                    ? "0 0 40px rgba(255,215,0,0.15)"
-                    : "0 0 25px rgba(255,215,0,0.06)",
-                y: -4,
-            }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-        >
-            {badge && (
-                <motion.span
-                    className="absolute top-4 right-4 bg-accent text-background text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 15, delay: 0.5 }}
-                >
-                    {badge}
-                </motion.span>
+        <div className={`glass-card relative flex flex-col gap-8 rounded-2xl p-8 transition-transform hover:scale-[1.02] duration-300 overflow-hidden h-full ${highlighted ? "pro-glow" : ""}`}>
+            {highlighted && (
+                <div className="absolute -top-24 -right-24 w-48 h-48 bg-accent/20 blur-[80px] rounded-full pointer-events-none"></div>
             )}
-            <h3 className="text-sm font-bold text-accent uppercase tracking-widest mb-2">
-                {name}
-            </h3>
-            <div className="flex items-baseline gap-1 mb-2">
-                <span className="text-5xl font-black tracking-tight">{price}</span>
-                {period && (
-                    <span className="text-sm text-slate-400 font-medium">{period}</span>
-                )}
-            </div>
-            <p className="text-sm text-slate-400 leading-relaxed mb-6">
-                {description}
-            </p>
-            <ul className="flex flex-col gap-3 mb-8 flex-1">
-                {features.map((feature, i) => (
-                    <li
-                        key={i}
-                        className={`flex items-center gap-2 text-sm ${feature.included
-                            ? "text-slate-200"
-                            : "text-slate-500 line-through"
-                            }`}
-                    >
-                        <span
-                            className={`material-symbols-outlined text-sm ${feature.included ? "text-accent" : "text-slate-600"
-                                }`}
-                            style={
-                                feature.included
-                                    ? { fontVariationSettings: "'FILL' 1" }
-                                    : undefined
-                            }
-                        >
-                            {feature.included ? "check_circle" : "cancel"}
+
+            <div className="flex flex-col gap-2 relative">
+                <div className="flex items-center justify-between">
+                    <h3 className={`${highlighted ? "text-accent font-black" : "text-slate-400 font-bold"} text-sm uppercase tracking-widest`}>
+                        {name}
+                    </h3>
+                    {badge && (
+                        <span className="bg-accent text-background text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-tighter">
+                            {badge}
                         </span>
-                        <span className="font-medium">{feature.text}</span>
-                    </li>
-                ))}
-            </ul>
-            <Link href={href} className="w-full block">
-                {ButtonComponent}
+                    )}
+                </div>
+                <div className="flex items-baseline gap-2">
+                    <span className="text-slate-100 text-5xl font-black tracking-tight">{price}</span>
+                    <span className="text-slate-500 text-lg font-medium">{period}</span>
+                </div>
+                <p className={`${highlighted ? "text-slate-300" : "text-slate-400"} mt-2`}>
+                    {description}
+                </p>
+            </div>
+
+            <div className="space-y-4 relative flex-1">
+                {features.map((feature, i) => {
+                    const isIncluded = feature.included !== false;
+                    const iconName = feature.icon || (isIncluded ? "check_circle" : "block");
+
+                    return (
+                        <div key={i} className={`flex items-center gap-3 ${isIncluded ? "text-slate-200" : "text-slate-400 line-through decoration-slate-600"}`}>
+                            <span
+                                className={`material-symbols-outlined text-xl ${isIncluded ? "text-accent" : "text-slate-600"}`}
+                                style={isIncluded && iconName === 'stars' ? { fontVariationSettings: '"FILL" 1' } : undefined}
+                            >
+                                {iconName}
+                            </span>
+                            <span className={highlighted && i === 0 && iconName === 'stars' ? "font-bold text-slate-100" : "font-medium"}>
+                                {feature.text}
+                            </span>
+                        </div>
+                    );
+                })}
+            </div>
+
+            <Link href={href} className="mt-auto w-full block relative">
+                <button className={`w-full py-4 rounded-xl font-bold transition-all text-base ${highlighted ? "bg-accent hover:bg-accent/90 text-background font-black shadow-lg shadow-accent/20" : "border border-white/10 bg-white/5 hover:bg-white/10 text-white"}`}>
+                    {cta}
+                </button>
             </Link>
-        </motion.div>
+        </div>
     );
 }
