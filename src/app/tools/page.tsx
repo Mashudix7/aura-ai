@@ -100,7 +100,7 @@ export default function ToolsPage() {
                         onChange={(e) => setSearch(e.target.value)}
                     />
                 </div>
-                <div className="flex items-center gap-2 overflow-x-auto pb-2 w-full md:w-auto">
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 w-full md:w-auto scrollbar-hide">
                     {categories.map((cat) => (
                         <motion.button
                             key={cat}

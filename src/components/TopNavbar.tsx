@@ -57,21 +57,23 @@ export default function TopNavbar() {
                     <div className="hidden md:flex items-center gap-1 bg-white/[0.03] rounded-full px-1.5 py-1 border border-white/[0.06]">
                         {navLinks.map((link) => {
                             const isActive = pathname === link.href;
-                            const isChat = link.label === "Chat";
 
                             return (
                                 <Link
                                     key={link.href}
                                     href={link.href}
                                     prefetch={false}
-                                    className={`relative px-5 py-2 rounded-full text-sm font-medium transition-all ${isActive
-                                        ? "bg-accent/15 border border-accent/20 text-accent"
-                                        : isChat
-                                            ? "text-accent border-b-2 border-accent ml-2 rounded-none px-2 py-1 mx-3"
-                                            : "text-slate-400 hover:text-slate-200"
+                                    className={`relative px-5 py-2 text-sm font-medium transition-colors ${isActive ? "text-accent" : "text-slate-400 hover:text-slate-200"
                                         }`}
                                 >
-                                    {link.label}
+                                    {isActive && (
+                                        <motion.div
+                                            layoutId="nav-indicator"
+                                            className="absolute inset-0 bg-accent/15 border border-accent/20 rounded-full"
+                                            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                                        />
+                                    )}
+                                    <span className="relative z-10">{link.label}</span>
                                 </Link>
                             );
                         })}

@@ -85,6 +85,18 @@ body {
   border-radius: 10px;
 }
 
+/* Hide scrollbar completely but allow scrolling */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
 /* Range input */
 input[type='range']::-webkit-slider-runnable-track {
   background: rgba(255, 215, 0, 0.2);
@@ -166,6 +178,7 @@ input[type='range']::-webkit-slider-thumb {
   0% {
     transform: translateX(0%);
   }
+
   100% {
     transform: translateX(-50%);
   }

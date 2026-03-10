@@ -156,10 +156,9 @@ export default function ChatPage() {
                         className="hidden lg:flex flex-col shrink-0 bg-black/40 border border-white/[0.08] rounded-3xl p-5 relative z-10 backdrop-blur-3xl shadow-2xl overflow-hidden"
                     >
                         <div className="flex items-center justify-between mb-6 px-1 w-64">
-                            <Link href="/" className="flex items-center gap-1.5 group">
-                                <span className="text-xl tracking-tight text-white group-hover:text-accent transition-colors flex items-center">
-                                    <span className="font-sora font-semibold">Aura</span>
-                                    <span className="font-sora font-extrabold">AI</span>
+                            <Link href="/" className="flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10 border border-accent/20 group hover:border-accent/40 transition-all">
+                                <span className="material-symbols-outlined text-accent text-[22px] group-hover:scale-110 transition-transform">
+                                    auto_awesome
                                 </span>
                             </Link>
                             <button
@@ -193,7 +192,6 @@ export default function ChatPage() {
                                 <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">Active Model</span>
                             </div>
                             <p className="text-sm font-medium text-slate-200 flex items-center gap-2">
-                                <span className="material-symbols-outlined text-accent text-[16px]">auto_awesome</span>
                                 Gemini 2.5 Flash
                             </p>
                         </div>
@@ -246,10 +244,8 @@ export default function ChatPage() {
                         )}
                     </div>
 
-                    {/* Centered Model Badge */}
                     <div className="mx-auto lg:absolute lg:left-1/2 lg:-translate-x-1/2">
                         <div className="flex items-center gap-2 px-5 py-2.5 bg-white/[0.04] border border-white/[0.1] rounded-full font-medium text-sm text-slate-200 shadow-lg">
-                            <span className="text-accent material-symbols-outlined text-[18px]">auto_awesome</span>
                             <span>Gemini 2.5 Flash</span>
                             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                         </div>
@@ -316,20 +312,20 @@ export default function ChatPage() {
                         </FadeIn>
                     ) : null}
 
-                    {messages.map((msg, i) => (
-                        <ChatMessage
-                            key={msg.id}
-                            role={msg.role === "user" ? "user" : "ai"}
-                            content={msg.content}
-                            timestamp=""
-                            index={i}
-                        />
-                    ))}
+                    {messages.map((msg, i) => {
+                        const isThinking = isLoading && i === messages.length - 1 && msg.role === "assistant" && msg.content === "";
 
-                    {/* Thinking indicator */}
-                    {isLoading && messages[messages.length - 1]?.content === "" && (
-                        <ChatMessage role="ai" content="" timestamp="" isThinking index={messages.length} />
-                    )}
+                        return (
+                            <ChatMessage
+                                key={msg.id}
+                                role={msg.role === "user" ? "user" : "ai"}
+                                content={msg.content}
+                                timestamp=""
+                                index={i}
+                                isThinking={isThinking}
+                            />
+                        );
+                    })}
 
                     {/* Invisible div to scroll to */}
                     <div ref={messagesEndRef} className="h-4" />
@@ -338,13 +334,13 @@ export default function ChatPage() {
                 {/* Input Area inside the main container */}
                 <div className="p-4 md:p-6 bg-transparent shrink-0 relative z-20 w-full max-w-4xl mx-auto">
                     <motion.div
-                        className="bg-[#050505]/80 backdrop-blur-3xl rounded-[28px] p-2.5 border border-white/[0.1] flex items-end gap-2 shadow-[0_16px_40px_rgba(0,0,0,0.5)]"
+                        className="bg-[#050505]/80 backdrop-blur-3xl rounded-[28px] p-2 border border-white/[0.1] flex items-end gap-2 shadow-[0_16px_40px_rgba(0,0,0,0.5)]"
                         whileHover={{ borderColor: "rgba(255,215,0,0.25)" }}
                         transition={{ duration: 0.3 }}
                     >
-                        <div className="flex items-center gap-1 mb-1.5 px-1">
+                        <div className="flex items-center px-1">
                             <motion.button
-                                className="p-2 text-slate-400 hover:text-accent hover:bg-accent/10 rounded-xl transition-all"
+                                className="w-[44px] h-[48px] flex items-center justify-center text-slate-400 hover:text-accent hover:bg-accent/10 rounded-2xl transition-all"
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
                                 title="Attach file"
@@ -357,13 +353,13 @@ export default function ChatPage() {
                                 e.preventDefault();
                                 handleSubmit(e);
                             }}
-                            className="flex-1 flex gap-2"
+                            className="flex-1 flex gap-2 items-end"
                         >
                             <textarea
                                 ref={textareaRef}
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
-                                className="flex-1 bg-transparent border-none focus:ring-0 text-slate-100 placeholder-slate-500 py-3.5 resize-none max-h-40 min-h-[52px] outline-none text-[15px] leading-relaxed relative top-1"
+                                className="flex-1 bg-transparent border-none focus:ring-0 text-slate-100 placeholder-slate-500 py-[12px] resize-none max-h-40 min-h-[48px] outline-none text-[15px] leading-relaxed scrollbar-hide"
                                 placeholder="Message Aura AI..."
                                 rows={1}
                                 onKeyDown={(e) => {
@@ -376,7 +372,7 @@ export default function ChatPage() {
                             <motion.button
                                 type="submit"
                                 disabled={isLoading || !input.trim()}
-                                className={`mb-1.5 mr-1 p-3 rounded-2xl font-bold flex items-center justify-center transition-colors ${input.trim()
+                                className={`w-[48px] h-[48px] mr-1 rounded-2xl font-bold flex items-center justify-center transition-colors ${input.trim()
                                     ? "bg-accent text-background hover:bg-[#ffe033]"
                                     : "bg-white/5 text-slate-500 cursor-not-allowed"
                                     }`}
@@ -384,9 +380,9 @@ export default function ChatPage() {
                                 whileTap={input.trim() ? { scale: 0.95 } : {}}
                             >
                                 {isLoading ? (
-                                    <span className="material-symbols-outlined font-bold animate-spin">progress_activity</span>
+                                    <span className="material-symbols-outlined font-bold animate-spin text-[20px]">progress_activity</span>
                                 ) : (
-                                    <span className="material-symbols-outlined font-bold">arrow_upward</span>
+                                    <span className="material-symbols-outlined font-bold text-[20px]">arrow_upward</span>
                                 )}
                             </motion.button>
                         </form>
