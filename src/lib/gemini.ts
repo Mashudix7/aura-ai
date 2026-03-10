@@ -1,39 +1,99 @@
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = "gemini-2.5-flash";
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}`;
+const GEMINI_BASE_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}`;
 
-export interface GeminiMessage {
-    role: "user" | "model";
-    parts: { text: string }[];
-}
-
-/**
- * Convert chat messages into Gemini-compatible format
- */
-export function toGeminiMessages(
-    messages: { role: string; content: string }[]
-): GeminiMessage[] {
-    return messages.map((msg) => ({
-        role: msg.role === "user" ? "user" : "model",
-        parts: [{ text: msg.content }],
-    }));
-}
-
-/**
- * Call Gemini API and return a readable stream for SSE
- */
-export async function streamGemini(
-    messages: { role: string; content: string }[],
-    systemPrompt?: string
-): Promise<ReadableStream<Uint8Array>> {
-    if (!GEMINI_API_KEY) {
+function getApiKey(): string {
+    const key = process.env.GEMINI_API_KEY;
+    if (!key) {
         throw new Error("GEMINI_API_KEY is not set in environment variables");
     }
+    return key;
+}
 
-    const geminiMessages = toGeminiMessages(messages);
+// Supported image MIME types for Gemini multimodal
+export const SUPPORTED_IMAGE_TYPES = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "image/heic",
+] as const;
+
+export type SupportedImageType = (typeof SUPPORTED_IMAGE_TYPES)[number];
+
+export interface ImageAttachment {
+    data: string; // base64 encoded
+    mimeType: string;
+}
+
+export interface ChatMessage {
+    role: string;
+    content: string;
+    images?: ImageAttachment[];
+}
+
+// Gemini API types
+interface GeminiPart {
+    text?: string;
+    inline_data?: {
+        mime_type: string;
+        data: string;
+    };
+}
+
+interface GeminiContent {
+    role: "user" | "model";
+    parts: GeminiPart[];
+}
+
+/**
+ * Convert chat messages into Gemini-compatible format with multimodal support
+ */
+export function toGeminiContents(messages: ChatMessage[]): GeminiContent[] {
+    return messages.map((msg) => {
+        const parts: GeminiPart[] = [];
+
+        // Add image parts first (Gemini prefers images before text)
+        if (msg.images && msg.images.length > 0) {
+            for (const img of msg.images) {
+                parts.push({
+                    inline_data: {
+                        mime_type: img.mimeType,
+                        data: img.data,
+                    },
+                });
+            }
+        }
+
+        // Add text part
+        if (msg.content) {
+            parts.push({ text: msg.content });
+        }
+
+        // Ensure at least one part exists
+        if (parts.length === 0) {
+            parts.push({ text: "" });
+        }
+
+        return {
+            role: msg.role === "user" ? "user" : "model",
+            parts,
+        };
+    });
+}
+
+/**
+ * Call Gemini API and return a readable stream for SSE (supports multimodal)
+ */
+export async function streamGemini(
+    messages: ChatMessage[],
+    systemPrompt?: string
+): Promise<ReadableStream<Uint8Array>> {
+    const apiKey = getApiKey();
+
+    const contents = toGeminiContents(messages);
 
     const body: Record<string, unknown> = {
-        contents: geminiMessages,
+        contents,
         generationConfig: {
             temperature: 0.9,
             topP: 0.95,
@@ -49,7 +109,7 @@ export async function streamGemini(
     }
 
     const response = await fetch(
-        `${GEMINI_URL}:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`,
+        `${GEMINI_BASE_URL}:streamGenerateContent?alt=sse&key=${apiKey}`,
         {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -114,20 +174,38 @@ export async function streamGemini(
 }
 
 /**
- * Call Gemini API without streaming (simple request/response)
+ * Call Gemini API without streaming (simple request/response) — supports multimodal
  */
-export async function askGemini(message: string): Promise<string> {
-    if (!GEMINI_API_KEY) {
-        throw new Error("GEMINI_API_KEY is not set in environment variables");
+export async function askGemini(
+    message: string,
+    images?: ImageAttachment[]
+): Promise<string> {
+    const apiKey = getApiKey();
+
+    const parts: GeminiPart[] = [];
+
+    // Add images first
+    if (images && images.length > 0) {
+        for (const img of images) {
+            parts.push({
+                inline_data: {
+                    mime_type: img.mimeType,
+                    data: img.data,
+                },
+            });
+        }
     }
 
+    // Add text
+    parts.push({ text: message });
+
     const response = await fetch(
-        `${GEMINI_URL}:generateContent?key=${GEMINI_API_KEY}`,
+        `${GEMINI_BASE_URL}:generateContent?key=${apiKey}`,
         {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                contents: [{ parts: [{ text: message }] }],
+                contents: [{ parts }],
             }),
         }
     );

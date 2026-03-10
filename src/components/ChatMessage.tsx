@@ -4,12 +4,20 @@ import { motion } from "framer-motion";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
+import { useState } from "react";
+
+interface ImageAttachment {
+    data: string;
+    mimeType: string;
+}
+
 interface ChatMessageProps {
     role: "user" | "ai";
     content: string;
     timestamp: string;
     isThinking?: boolean;
     index?: number;
+    images?: ImageAttachment[];
 }
 
 export default function ChatMessage({
@@ -18,6 +26,7 @@ export default function ChatMessage({
     timestamp,
     isThinking = false,
     index = 0,
+    images,
 }: ChatMessageProps) {
     const animInitial = { opacity: 0, y: 20, scale: 0.95 };
     const animAnimate = { opacity: 1, y: 0, scale: 1 };
@@ -136,6 +145,7 @@ export default function ChatMessage({
         );
     }
 
+    // User message
     return (
         <motion.div
             className="w-full flex justify-end items-end gap-3 max-w-3xl"
@@ -145,9 +155,15 @@ export default function ChatMessage({
         >
             <div className="flex flex-col gap-1.5 items-end max-w-[85%]">
                 <div className="bg-background border border-accent/40 rounded-2xl rounded-br-none px-5 py-4 shadow-lg">
-                    <p className="leading-relaxed text-[15px] text-slate-100">
-                        {content}
-                    </p>
+                    {/* Image attachments */}
+                    {images && images.length > 0 && (
+                        <ImageGrid images={images} />
+                    )}
+                    {content && (
+                        <p className="leading-relaxed text-[15px] text-slate-100">
+                            {content}
+                        </p>
+                    )}
                 </div>
                 <span className="text-[10px] uppercase tracking-widest text-slate-500 mr-1">
                     You • {timestamp}
@@ -159,5 +175,84 @@ export default function ChatMessage({
                 </span>
             </div>
         </motion.div>
+    );
+}
+
+/**
+ * Image grid component for displaying attached images in messages
+ */
+function ImageGrid({ images }: { images: ImageAttachment[] }) {
+    const [expandedImage, setExpandedImage] = useState<string | null>(null);
+
+    const gridClass =
+        images.length === 1
+            ? "grid-cols-1"
+            : images.length === 2
+                ? "grid-cols-2"
+                : "grid-cols-2";
+
+    return (
+        <>
+            <div className={`grid ${gridClass} gap-2 mb-3`}>
+                {images.map((img, idx) => (
+                    <motion.button
+                        key={idx}
+                        onClick={() =>
+                            setExpandedImage(`data:${img.mimeType};base64,${img.data}`)
+                        }
+                        className="relative group overflow-hidden rounded-xl border border-white/10 hover:border-accent/40 transition-all cursor-zoom-in"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                    >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                            src={`data:${img.mimeType};base64,${img.data}`}
+                            alt={`Attachment ${idx + 1}`}
+                            className={`w-full object-cover rounded-xl ${images.length === 1 ? "max-h-72" : "max-h-40"
+                                }`}
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                            <span className="material-symbols-outlined text-white opacity-0 group-hover:opacity-100 transition-opacity text-2xl drop-shadow-lg">
+                                zoom_in
+                            </span>
+                        </div>
+                    </motion.button>
+                ))}
+            </div>
+
+            {/* Lightbox Modal */}
+            {expandedImage && (
+                <motion.div
+                    className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6 cursor-zoom-out"
+                    onClick={() => setExpandedImage(null)}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                >
+                    <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                        className="relative max-w-4xl max-h-[85vh]"
+                    >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                            src={expandedImage}
+                            alt="Expanded view"
+                            className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl"
+                        />
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedImage(null);
+                            }}
+                            className="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-colors backdrop-blur-md"
+                        >
+                            <span className="material-symbols-outlined text-white text-[20px]">close</span>
+                        </button>
+                    </motion.div>
+                </motion.div>
+            )}
+        </>
     );
 }
