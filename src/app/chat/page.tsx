@@ -1,31 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback, FormEvent } from "react";
 import ChatMessage from "@/components/ChatMessage";
 import Spotlight from "@/components/Spotlight";
 import { FadeIn } from "@/components/AnimationWrappers";
 import { motion, AnimatePresence } from "framer-motion";
-import { useChat } from "ai/react";
 import { useSession } from "next-auth/react";
 
-
-const historyChats = [
-    { id: 1, title: "Q4 Roadmap Analysis", time: "2 hrs ago" },
-    { id: 2, title: "Next.js Authentication", time: "Yesterday" },
-    { id: 3, title: "Refactoring API routes", time: "Yesterday" },
-    { id: 4, title: "Vercel Deployment Issues", time: "3 days ago" },
-];
-
-const models = ["Aura GPT", "Smart Mode", "Fast Mode", "Creative Mode"];
+interface Message {
+    id: string;
+    role: "user" | "assistant";
+    content: string;
+}
 
 export default function ChatPage() {
     const { data: session } = useSession();
-    const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat();
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    const [selectedModel, setSelectedModel] = useState(models[0]);
-    const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [input, setInput] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -33,6 +28,113 @@ export default function ChatPage() {
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, isLoading]);
+
+    // Auto-resize textarea
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    useEffect(() => {
+        if (textareaRef.current) {
+            textareaRef.current.style.height = "auto";
+            textareaRef.current.style.height =
+                Math.min(textareaRef.current.scrollHeight, 160) + "px";
+        }
+    }, [input]);
+
+    const handleSubmit = useCallback(
+        async (e?: FormEvent) => {
+            e?.preventDefault();
+            const trimmed = input.trim();
+            if (!trimmed || isLoading) return;
+
+            const userMessage: Message = {
+                id: crypto.randomUUID(),
+                role: "user",
+                content: trimmed,
+            };
+
+            const updatedMessages = [...messages, userMessage];
+            setMessages(updatedMessages);
+            setInput("");
+            setIsLoading(true);
+
+            // Create placeholder AI message
+            const aiMessageId = crypto.randomUUID();
+            setMessages((prev) => [
+                ...prev,
+                { id: aiMessageId, role: "assistant", content: "" },
+            ]);
+
+            try {
+                const res = await fetch("/api/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        messages: updatedMessages.map((m) => ({
+                            role: m.role === "assistant" ? "assistant" : "user",
+                            content: m.content,
+                        })),
+                    }),
+                });
+
+                if (!res.ok) {
+                    const errData = await res.json();
+                    throw new Error(errData.error || "Request failed");
+                }
+
+                // Read stream
+                const reader = res.body?.getReader();
+                if (!reader) throw new Error("No stream available");
+
+                const decoder = new TextDecoder();
+                let accumulatedContent = "";
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    accumulatedContent += chunk;
+
+                    // Update the AI message content progressively
+                    setMessages((prev) =>
+                        prev.map((msg) =>
+                            msg.id === aiMessageId
+                                ? { ...msg, content: accumulatedContent }
+                                : msg
+                        )
+                    );
+                }
+            } catch (err) {
+                console.error("Chat error:", err);
+                setMessages((prev) =>
+                    prev.map((msg) =>
+                        msg.id === aiMessageId
+                            ? {
+                                ...msg,
+                                content:
+                                    "⚠️ Oops, something went wrong. Please try again.",
+                            }
+                            : msg
+                    )
+                );
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [input, isLoading, messages]
+    );
+
+    const handleNewChat = useCallback(() => {
+        setMessages([]);
+        setInput("");
+    }, []);
+
+    // Greeting based on time
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return "Good morning";
+        if (hour < 17) return "Good afternoon";
+        return "Good evening";
+    };
 
     return (
         <div
@@ -75,20 +177,46 @@ export default function ChatPage() {
                             <span className="text-sm font-medium text-slate-300 group-hover:text-slate-100">Back to Home</span>
                         </Link>
 
+                        {/* New Chat Button */}
+                        <button
+                            onClick={handleNewChat}
+                            className="mb-4 flex items-center gap-3 px-4 py-3 w-64 bg-accent/10 hover:bg-accent/20 border border-accent/20 rounded-2xl transition-all group"
+                        >
+                            <span className="material-symbols-outlined text-[18px] text-accent">add</span>
+                            <span className="text-sm font-semibold text-accent">New Chat</span>
+                        </button>
+
+                        {/* Model Info */}
+                        <div className="mb-4 px-4 py-3 w-64 bg-white/[0.02] border border-white/[0.05] rounded-2xl">
+                            <div className="flex items-center gap-2 mb-1.5">
+                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">Active Model</span>
+                            </div>
+                            <p className="text-sm font-medium text-slate-200 flex items-center gap-2">
+                                <span className="material-symbols-outlined text-accent text-[16px]">auto_awesome</span>
+                                Gemini 2.5 Flash
+                            </p>
+                        </div>
+
                         <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-1 w-64">
                             <div className="flex items-center justify-between mb-3 px-2 mt-2">
-                                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Recent</span>
-                                <button className="text-slate-500 hover:text-accent transition-colors" title="New Chat">
-                                    <span className="material-symbols-outlined text-[16px]">edit_square</span>
-                                </button>
+                                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Current Session</span>
                             </div>
 
-                            {historyChats.map((chat) => (
-                                <button key={chat.id} className="w-full text-left px-4 py-3 rounded-2xl hover:bg-white/[0.06] transition-colors group flex flex-col gap-1.5 border border-transparent hover:border-white/[0.05]">
-                                    <span className="text-sm font-medium text-slate-300 group-hover:text-slate-100 truncate w-full">{chat.title}</span>
-                                    <span className="text-[10px] text-slate-500">{chat.time}</span>
-                                </button>
-                            ))}
+                            {messages.length > 0 ? (
+                                <div className="w-full text-left px-4 py-3 rounded-2xl bg-white/[0.06] border border-white/[0.05] flex flex-col gap-1.5">
+                                    <span className="text-sm font-medium text-slate-200 truncate w-full flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-accent text-[14px]">chat_bubble</span>
+                                        {messages[0].content.slice(0, 40)}{messages[0].content.length > 40 ? "..." : ""}
+                                    </span>
+                                    <span className="text-[10px] text-slate-500">{messages.length} messages</span>
+                                </div>
+                            ) : (
+                                <div className="px-4 py-6 text-center">
+                                    <span className="material-symbols-outlined text-slate-600 text-3xl mb-2 block">forum</span>
+                                    <p className="text-xs text-slate-500">Start a conversation to see it here</p>
+                                </div>
+                            )}
                         </div>
                     </motion.aside>
                 )}
@@ -97,7 +225,7 @@ export default function ChatPage() {
             {/* Main Chat Area */}
             <main className="flex-1 flex flex-col bg-black/40 border border-white/[0.08] rounded-3xl relative z-10 overflow-hidden shadow-2xl backdrop-blur-3xl min-w-0 transition-all duration-300">
 
-                {/* Chat Header with Dropdown */}
+                {/* Chat Header */}
                 <header className="h-[72px] border-b border-white/[0.05] flex items-center justify-between px-4 lg:px-6 shrink-0 relative z-30 bg-black/20 backdrop-blur-md">
                     {/* Left Actions */}
                     <div className="flex items-center gap-2">
@@ -118,50 +246,27 @@ export default function ChatPage() {
                         )}
                     </div>
 
-                    {/* Centered Dropdown */}
-                    <div className="relative mx-auto lg:absolute lg:left-1/2 lg:-translate-x-1/2">
-                        <button
-                            onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-                            className="flex items-center gap-2 px-5 py-2.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.1] rounded-full transition-colors font-medium text-sm text-slate-200 shadow-lg"
-                        >
+                    {/* Centered Model Badge */}
+                    <div className="mx-auto lg:absolute lg:left-1/2 lg:-translate-x-1/2">
+                        <div className="flex items-center gap-2 px-5 py-2.5 bg-white/[0.04] border border-white/[0.1] rounded-full font-medium text-sm text-slate-200 shadow-lg">
                             <span className="text-accent material-symbols-outlined text-[18px]">auto_awesome</span>
-                            {selectedModel}
-                            <span className={`material-symbols-outlined text-[18px] text-slate-400 transition-transform ${isModelDropdownOpen ? 'rotate-180' : ''}`}>expand_more</span>
-                        </button>
-
-                        <AnimatePresence>
-                            {isModelDropdownOpen && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="absolute top-full mt-3 left-1/2 -translate-x-1/2 w-56 bg-[#0a0a0a]/95 backdrop-blur-2xl border border-white/[0.1] rounded-3xl shadow-[0_16px_40px_rgba(0,0,0,0.8)] overflow-hidden py-2"
-                                >
-                                    {models.map((model) => (
-                                        <button
-                                            key={model}
-                                            onClick={() => {
-                                                setSelectedModel(model);
-                                                setIsModelDropdownOpen(false);
-                                            }}
-                                            className={`w-full text-left px-5 py-3 text-sm transition-colors flex items-center justify-between ${selectedModel === model ? "bg-accent/10 text-accent font-medium" : "text-slate-300 hover:bg-white/[0.06]"
-                                                }`}
-                                        >
-                                            {model}
-                                            {selectedModel === model && <span className="material-symbols-outlined text-[16px]">check</span>}
-                                        </button>
-                                    ))}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                            <span>Gemini 2.5 Flash</span>
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        </div>
                     </div>
 
-                    {/* Right: Fullscreen Toggle */}
-                    <div className="flex justify-end w-10 shrink-0">
+                    {/* Right: Actions */}
+                    <div className="flex items-center gap-1 shrink-0">
+                        <button
+                            onClick={handleNewChat}
+                            className="p-2 text-slate-400 hover:text-accent hover:bg-white/[0.05] rounded-xl transition-all flex items-center justify-center"
+                            title="New Chat"
+                        >
+                            <span className="material-symbols-outlined text-[22px]">edit_square</span>
+                        </button>
                         <button
                             onClick={() => setIsFullscreen(!isFullscreen)}
-                            className="p-2 -mr-3 text-slate-400 hover:text-accent hover:bg-white/[0.05] rounded-xl transition-all flex items-center justify-center"
+                            className="p-2 text-slate-400 hover:text-accent hover:bg-white/[0.05] rounded-xl transition-all flex items-center justify-center"
                             title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
                         >
                             <span className="material-symbols-outlined text-[22px]">
@@ -174,23 +279,47 @@ export default function ChatPage() {
                 {/* Messages Container */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8 space-y-8 relative z-10 w-full max-w-4xl mx-auto">
                     {messages.length === 0 ? (
-                        <FadeIn delay={0.2} className="text-center space-y-2 mt-12 mb-8">
-                            <div className="w-16 h-16 bg-accent/10 rounded-3xl mx-auto flex items-center justify-center mb-6 text-accent border border-accent/20 shadow-[0_0_30px_rgba(255,215,0,0.1)]">
-                                <span className="material-symbols-outlined text-3xl">smart_toy</span>
+                        <FadeIn delay={0.2} className="text-center space-y-4 mt-12 mb-8">
+                            <div className="w-20 h-20 bg-accent/10 rounded-3xl mx-auto flex items-center justify-center mb-6 text-accent border border-accent/20 shadow-[0_0_40px_rgba(255,215,0,0.1)]">
+                                <span className="material-symbols-outlined text-4xl">smart_toy</span>
                             </div>
                             <h2 className="text-2xl font-bold text-slate-100 font-sora tracking-tight">
-                                Good morning{session?.user?.name ? `, ${session.user.name.split(" ")[0]}` : ""}
+                                {getGreeting()}{session?.user?.name ? `, ${session.user.name.split(" ")[0]}` : ""}
                             </h2>
-                            <p className="text-slate-400 text-sm">
-                                How can Aura assist your workflow today?
+                            <p className="text-slate-400 text-sm max-w-md mx-auto">
+                                How can Aura assist your workflow today? I&apos;m powered by <span className="text-accent font-medium">Gemini 2.5 Flash</span> for lightning-fast responses.
                             </p>
+
+                            {/* Suggestion Chips */}
+                            <div className="flex flex-wrap justify-center gap-3 mt-6">
+                                {[
+                                    { icon: "code", text: "Write a React component" },
+                                    { icon: "psychology", text: "Explain a concept" },
+                                    { icon: "edit_note", text: "Help me draft an email" },
+                                    { icon: "analytics", text: "Analyze this data" },
+                                ].map((suggestion) => (
+                                    <motion.button
+                                        key={suggestion.text}
+                                        onClick={() => {
+                                            setInput(suggestion.text);
+                                            textareaRef.current?.focus();
+                                        }}
+                                        className="flex items-center gap-2 px-4 py-2.5 bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] hover:border-accent/30 rounded-2xl text-sm text-slate-300 hover:text-slate-100 transition-all group"
+                                        whileHover={{ scale: 1.03, y: -2 }}
+                                        whileTap={{ scale: 0.97 }}
+                                    >
+                                        <span className="material-symbols-outlined text-[16px] text-slate-500 group-hover:text-accent transition-colors">{suggestion.icon}</span>
+                                        {suggestion.text}
+                                    </motion.button>
+                                ))}
+                            </div>
                         </FadeIn>
                     ) : null}
 
-                    {messages.map((msg: any, i: number) => (
+                    {messages.map((msg, i) => (
                         <ChatMessage
                             key={msg.id}
-                            role={msg.role as "user" | "ai"}
+                            role={msg.role === "user" ? "user" : "ai"}
                             content={msg.content}
                             timestamp=""
                             index={i}
@@ -198,7 +327,7 @@ export default function ChatPage() {
                     ))}
 
                     {/* Thinking indicator */}
-                    {isLoading && (
+                    {isLoading && messages[messages.length - 1]?.content === "" && (
                         <ChatMessage role="ai" content="" timestamp="" isThinking index={messages.length} />
                     )}
 
@@ -218,28 +347,29 @@ export default function ChatPage() {
                                 className="p-2 text-slate-400 hover:text-accent hover:bg-accent/10 rounded-xl transition-all"
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
+                                title="Attach file"
                             >
                                 <span className="material-symbols-outlined text-[22px]">attach_file</span>
                             </motion.button>
-                            <motion.button
-                                className="p-2 text-slate-400 hover:text-accent hover:bg-accent/10 rounded-xl transition-all"
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                            >
-                                <span className="material-symbols-outlined text-[22px]">mic</span>
-                            </motion.button>
                         </div>
-                        <form onSubmit={handleSubmit} className="flex-1 flex gap-2">
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                handleSubmit(e);
+                            }}
+                            className="flex-1 flex gap-2"
+                        >
                             <textarea
+                                ref={textareaRef}
                                 value={input}
-                                onChange={handleInputChange}
-                                className="flex-1 bg-transparent border-none focus:ring-0 text-slate-100 placeholder-slate-500 py-3.5 resize-none max-h-32 min-h-[52px] outline-none text-[15px] leading-relaxed relative top-1"
+                                onChange={(e) => setInput(e.target.value)}
+                                className="flex-1 bg-transparent border-none focus:ring-0 text-slate-100 placeholder-slate-500 py-3.5 resize-none max-h-40 min-h-[52px] outline-none text-[15px] leading-relaxed relative top-1"
                                 placeholder="Message Aura AI..."
                                 rows={1}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' && !e.shiftKey) {
                                         e.preventDefault();
-                                        handleSubmit(e as any);
+                                        handleSubmit();
                                     }
                                 }}
                             />
@@ -253,12 +383,16 @@ export default function ChatPage() {
                                 whileHover={input.trim() ? { scale: 1.05, boxShadow: "0 0 20px rgba(255,215,0,0.4)" } : {}}
                                 whileTap={input.trim() ? { scale: 0.95 } : {}}
                             >
-                                <span className="material-symbols-outlined font-bold">arrow_upward</span>
+                                {isLoading ? (
+                                    <span className="material-symbols-outlined font-bold animate-spin">progress_activity</span>
+                                ) : (
+                                    <span className="material-symbols-outlined font-bold">arrow_upward</span>
+                                )}
                             </motion.button>
                         </form>
                     </motion.div>
                     <p className="text-center text-[10px] text-slate-500 mt-4 uppercase tracking-[0.2em] font-medium opacity-80">
-                        Powered by Aura Intelligence Engine • v4.2.0 Premium
+                        Powered by Gemini 2.5 Flash • Aura AI v4.2.0
                     </p>
                 </div>
             </main>
