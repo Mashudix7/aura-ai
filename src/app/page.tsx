@@ -270,45 +270,49 @@ export default function HomePage() {
                   <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
                   <div className="w-3 h-3 rounded-full bg-green-500/60" />
                 </div>
-                <div className="text-xs font-mono text-slate-500 uppercase tracking-widest">Aura v4.0 — New Thread</div>
+                <div className="flex items-center gap-2 px-4 py-1.5 bg-white/[0.04] border border-white/10 rounded-full font-medium text-xs text-slate-200 shadow-lg">
+                  <span>Aura AI 2.5</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                </div>
                 <div className="w-16" />
               </div>
 
               {/* Chat preview body */}
-              <div className="bg-[#0a0a0e] p-6 md:p-8 min-h-[280px] md:min-h-[340px] flex flex-col gap-5">
+              <div className="bg-[#0a0a0e] p-6 md:p-8 min-h-[280px] md:min-h-[340px] flex flex-col gap-5 justify-end pb-20">
                 {/* User message */}
-                <motion.div className="flex gap-3 items-start" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.0, duration: 0.5 }}>
-                  <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-slate-400 text-sm">person</span>
+                <motion.div className="w-full flex justify-end items-end gap-3" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.0, duration: 0.5 }}>
+                  <div className="flex flex-col gap-1.5 items-end max-w-[85%]">
+                    <div className="bg-background border border-accent/40 rounded-2xl rounded-br-none px-5 py-3 shadow-lg">
+                      <p className="leading-relaxed text-[15px] text-slate-100">Write a clean React component for a glassmorphism card.</p>
+                    </div>
+                    <span className="text-[10px] uppercase tracking-widest text-slate-500 mr-1">You •</span>
                   </div>
-                  <div className="bg-white/5 border border-white/8 px-4 py-3 rounded-2xl rounded-tl-none max-w-[75%]">
-                    <p className="text-slate-200 text-sm">Analyze market positioning for a luxury AI platform targeting C-suite executives.</p>
+                  <div className="w-8 h-8 rounded-full border border-accent/30 bg-accent/20 flex items-center justify-center shrink-0 mb-1">
+                    <span className="material-symbols-outlined text-accent text-sm">person</span>
                   </div>
                 </motion.div>
 
                 {/* AI response */}
-                <motion.div className="flex gap-3 items-start flex-row-reverse" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.6, duration: 0.5 }}>
-                  <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-background text-sm">auto_awesome</span>
+                <motion.div className="w-full flex justify-start items-end gap-3" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.6, duration: 0.5 }}>
+                  <div className="w-8 h-8 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0 mb-1">
+                    <span className="material-symbols-outlined text-accent text-sm">smart_toy</span>
                   </div>
-                  <div className="bg-accent/8 border border-accent/15 px-4 py-3 rounded-2xl rounded-tr-none max-w-[75%]">
-                    <p className="text-accent text-xs font-bold mb-2">Aura AI</p>
-                    <p className="text-slate-300 text-sm leading-relaxed">Positioning should center on <span className="text-accent font-semibold">exclusivity</span>, <span className="text-accent font-semibold">precision</span>, and measurable ROI. A three-tier approach: executive briefings, white-glove onboarding, and quarterly performance reporting…</p>
-                  </div>
-                </motion.div>
-
-                {/* Typing indicator */}
-                <motion.div className="flex gap-3 items-center flex-row-reverse" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2.4, duration: 0.4 }}>
-                  <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-background text-sm">auto_awesome</span>
-                  </div>
-                  <div className="bg-accent/8 border border-accent/15 px-4 py-3 rounded-2xl rounded-tr-none flex gap-1.5 items-center">
-                    {[0, 0.2, 0.4].map((d, i) => (
-                      <motion.div key={i} className="w-1.5 h-1.5 rounded-full bg-accent/60"
-                        animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
-                        transition={{ duration: 0.8, repeat: Infinity, delay: d }}
-                      />
-                    ))}
+                  <div className="flex flex-col gap-1.5 max-w-[85%]">
+                    <div className="glass rounded-2xl rounded-bl-none p-5 shadow-lg text-[15px] leading-relaxed text-slate-200">
+                      <p className="mb-3">Here is a customizable glassmorphism card component using Tailwind CSS:</p>
+                      <pre className="bg-black/50 p-4 rounded-xl border border-white/10 overflow-x-auto custom-scrollbar">
+                        <code className="text-slate-300 font-mono text-[13px] leading-snug">
+                          {`export default function GlassCard({ children }) {
+  return (
+    <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-xl">
+      {children}
+    </div>
+  );
+}`}
+                        </code>
+                      </pre>
+                    </div>
+                    <span className="text-[10px] uppercase tracking-widest text-slate-500 ml-1">Aura AI •</span>
                   </div>
                 </motion.div>
               </div>
