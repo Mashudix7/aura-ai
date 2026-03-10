@@ -146,7 +146,7 @@ export default function AuthModal({ isOpen, onClose, initialTab = "signin" }: Au
                             </div>
 
                             {/* Form */}
-                            <div className="px-8 pb-8 relative overflow-hidden min-h-[340px]">
+                            <div className="px-8 relative min-h-[340px] pb-6">
                                 {error && (
                                     <motion.div
                                         initial={{ opacity: 0, y: -6 }}
@@ -226,12 +226,16 @@ export default function AuthModal({ isOpen, onClose, initialTab = "signin" }: Au
                                     </motion.form>
                                 </AnimatePresence>
 
-                                <div className="absolute bottom-6 left-0 right-0 px-8">
-                                    <p className="text-center text-xs text-slate-500 mt-5">
+                                <div className="mt-6 w-full pt-4 border-t border-white/[0.04] relative z-20">
+                                    <p className="text-center text-xs text-slate-500">
                                         {tab === "signin" ? "Don't have an account? " : "Already have an account? "}
                                         <button
-                                            onClick={() => switchTab(tab === "signin" ? "signup" : "signin")}
-                                            className="text-accent font-bold hover:underline"
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                switchTab(tab === "signin" ? "signup" : "signin")
+                                            }}
+                                            className="text-accent font-bold hover:underline ml-1"
                                         >
                                             {tab === "signin" ? "Sign Up" : "Sign In"}
                                         </button>

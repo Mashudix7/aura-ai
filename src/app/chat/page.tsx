@@ -411,13 +411,22 @@ export default function ChatPage() {
                                     auto_awesome
                                 </span>
                             </Link>
-                            <button
-                                onClick={() => setIsSidebarOpen(false)}
-                                className="p-2 text-slate-400 hover:text-accent hover:bg-white/[0.05] rounded-xl transition-all"
-                                title="Close Sidebar"
-                            >
-                                <span className="material-symbols-outlined text-[20px]">dock_to_left</span>
-                            </button>
+                            <div className="flex items-center gap-1">
+                                <button
+                                    onClick={handleNewChat}
+                                    className="p-2 text-slate-400 hover:text-accent hover:bg-white/[0.05] rounded-xl transition-all"
+                                    title="New Chat"
+                                >
+                                    <span className="material-symbols-outlined text-[20px]">edit_square</span>
+                                </button>
+                                <button
+                                    onClick={() => setIsSidebarOpen(false)}
+                                    className="p-2 text-slate-400 hover:text-accent hover:bg-white/[0.05] rounded-xl transition-all"
+                                    title="Close Sidebar"
+                                >
+                                    <span className="material-symbols-outlined text-[20px]">dock_to_left</span>
+                                </button>
+                            </div>
                         </div>
 
                         {/* Home Button in Sidebar */}
@@ -512,13 +521,6 @@ export default function ChatPage() {
 
                     {/* Right: Actions */}
                     <div className="flex items-center gap-1 shrink-0">
-                        <button
-                            onClick={handleNewChat}
-                            className="p-2 text-slate-400 hover:text-accent hover:bg-white/[0.05] rounded-xl transition-all flex items-center justify-center"
-                            title="New Chat"
-                        >
-                            <span className="material-symbols-outlined text-[22px]">edit_square</span>
-                        </button>
                         <button
                             onClick={() => setIsFullscreen(!isFullscreen)}
                             className="p-2 text-slate-400 hover:text-accent hover:bg-white/[0.05] rounded-xl transition-all flex items-center justify-center"
@@ -656,9 +658,9 @@ export default function ChatPage() {
                                                 {/* Remove button */}
                                                 <button
                                                     onClick={() => removeImage(idx)}
-                                                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500/90 hover:bg-red-500 flex items-center justify-center transition-colors shadow-lg opacity-0 group-hover:opacity-100"
+                                                    className="absolute top-1 right-1 z-10 w-6 h-6 rounded-full bg-red-500/90 hover:bg-red-500 flex items-center justify-center transition-colors shadow-lg opacity-0 group-hover:opacity-100 backdrop-blur-md"
                                                 >
-                                                    <span className="material-symbols-outlined text-white text-[12px]">close</span>
+                                                    <span className="material-symbols-outlined text-white text-[14px] font-bold">close</span>
                                                 </button>
                                                 {/* Size label */}
                                                 <div className="absolute bottom-1 left-1 right-1 text-center">
