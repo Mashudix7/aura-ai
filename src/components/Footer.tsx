@@ -19,7 +19,7 @@ export default function Footer() {
                     <Link href="#" className="hover:text-accent transition-colors">
                         Terms
                     </Link>
-                    <Link href="#" className="hover:text-accent transition-colors">
+                    <Link href="/docs" className="hover:text-accent transition-colors">
                         Docs
                     </Link>
                     <Link href="#" className="hover:text-accent transition-colors">

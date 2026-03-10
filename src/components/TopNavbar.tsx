@@ -15,6 +15,7 @@ const navLinks = [
     { href: "/", label: "Home" },
     { href: "/chat", label: "Chat" },
     { href: "/tools", label: "Tools" },
+    { href: "/docs", label: "Docs" },
     { href: "/upgrade", label: "Upgrade" },
 ];
 

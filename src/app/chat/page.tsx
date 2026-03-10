@@ -452,7 +452,7 @@ export default function ChatPage() {
                             </div>
                             <div className="flex items-center justify-between">
                                 <p className="text-sm font-medium text-slate-200">
-                                    Gemini 2.5 Flash
+                                    Aura AI 2.5
                                 </p>
                                 <span className="text-[10px] text-accent/70 bg-accent/10 px-2 py-0.5 rounded-full border border-accent/20">
                                     Multimodal
@@ -514,7 +514,7 @@ export default function ChatPage() {
 
                     <div className="mx-auto lg:absolute lg:left-1/2 lg:-translate-x-1/2">
                         <div className="flex items-center gap-2 px-5 py-2.5 bg-white/[0.04] border border-white/[0.1] rounded-full font-medium text-sm text-slate-200 shadow-lg">
-                            <span>Gemini 2.5 Flash</span>
+                            <span>Aura AI 2.5</span>
                             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                         </div>
                     </div>
