@@ -1,11 +1,17 @@
-import { streamGemini } from "@/lib/gemini";
+import { streamGemini, SUPPORTED_IMAGE_TYPES } from "@/lib/gemini";
+import type { ChatMessage, ImageAttachment } from "@/lib/gemini";
 
 const SYSTEM_PROMPT = `You are Aura AI, an elite, highly intelligent, and precise AI assistant.
 You speak concisely, with authority, and focus on delivering high-end, premium quality answers.
 You were created to assist professionals, executives, and power users.
 Make your responses highly analytical, well-structured, and exact.
 You are powered by the Gemini 2.5 Flash model.
-When appropriate, use markdown formatting to structure your responses with headings, bullet points, and code blocks.`;
+When appropriate, use markdown formatting to structure your responses with headings, bullet points, and code blocks.
+When the user sends an image, analyze it thoroughly and provide detailed, insightful observations.`;
+
+// Max image size: 4MB (Gemini limit is 20MB but we cap at 4MB for performance)
+const MAX_IMAGE_SIZE_BYTES = 4 * 1024 * 1024;
+const MAX_IMAGES_PER_MESSAGE = 5;
 
 export async function POST(req: Request) {
     try {
@@ -18,7 +24,57 @@ export async function POST(req: Request) {
             );
         }
 
-        const stream = await streamGemini(messages, SYSTEM_PROMPT);
+        // Validate and sanitize messages with image attachments
+        const sanitizedMessages: ChatMessage[] = messages.map(
+            (msg: { role: string; content: string; images?: ImageAttachment[] }) => {
+                const sanitized: ChatMessage = {
+                    role: msg.role,
+                    content: msg.content || "",
+                };
+
+                if (msg.images && Array.isArray(msg.images)) {
+                    // Limit number of images
+                    const validImages = msg.images
+                        .slice(0, MAX_IMAGES_PER_MESSAGE)
+                        .filter((img: ImageAttachment) => {
+                            // Validate mime type
+                            if (
+                                !SUPPORTED_IMAGE_TYPES.includes(
+                                    img.mimeType as (typeof SUPPORTED_IMAGE_TYPES)[number]
+                                )
+                            ) {
+                                console.warn(`Unsupported image type: ${img.mimeType}`);
+                                return false;
+                            }
+
+                            // Validate base64 data exists
+                            if (!img.data || typeof img.data !== "string") {
+                                console.warn("Invalid image data");
+                                return false;
+                            }
+
+                            // Approximate size check (base64 is ~4/3 of original)
+                            const approxSize = (img.data.length * 3) / 4;
+                            if (approxSize > MAX_IMAGE_SIZE_BYTES) {
+                                console.warn(
+                                    `Image too large: ~${Math.round(approxSize / 1024 / 1024)}MB`
+                                );
+                                return false;
+                            }
+
+                            return true;
+                        });
+
+                    if (validImages.length > 0) {
+                        sanitized.images = validImages;
+                    }
+                }
+
+                return sanitized;
+            }
+        );
+
+        const stream = await streamGemini(sanitizedMessages, SYSTEM_PROMPT);
 
         return new Response(stream, {
             headers: {
