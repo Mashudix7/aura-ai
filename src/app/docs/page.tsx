@@ -52,14 +52,29 @@ export default function DocsPage() {
             <Spotlight className="!fixed opacity-30" />
 
             {/* Hero */}
-            <FadeIn className="text-center mb-16 relative z-10">
-                <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight drop-shadow-lg">
-                    Documentation
-                </h1>
-                <p className="text-slate-400 text-lg max-w-2xl mx-auto backdrop-blur-sm">
-                    Everything you need to build, integrate, and scale with Aura AI.
-                </p>
-            </FadeIn>
+            <div className="max-w-4xl mx-auto text-center px-4 mb-20 relative z-10">
+                <FadeIn>
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 mb-6">
+                        <span className="flex h-2 w-2 rounded-full bg-accent animate-pulse" />
+                        <span className="text-accent text-xs font-bold tracking-widest uppercase">
+                            Developer Resources
+                        </span>
+                    </div>
+                </FadeIn>
+                <FadeIn delay={0.15}>
+                    <h1 className="text-slate-100 tracking-tight text-5xl md:text-7xl font-black leading-tight mb-6">
+                        Aura AI {" "}
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent via-yellow-200 to-accent">
+                            Documentation
+                        </span>
+                    </h1>
+                </FadeIn>
+                <FadeIn delay={0.3}>
+                    <p className="text-slate-400 text-lg md:text-xl font-medium max-w-2xl mx-auto leading-relaxed">
+                        Everything you need to build, integrate, and scale your application with Aura AI.
+                    </p>
+                </FadeIn>
+            </div>
 
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 relative z-10 w-full max-w-5xl mx-auto">
                 {/* Main Content Area */}

@@ -13,10 +13,10 @@ const AuthModal = dynamic(() => import("./AuthModal"), { ssr: false });
 
 const navLinks = [
     { href: "/", label: "Home" },
-    { href: "/chat", label: "Chat" },
     { href: "/tools", label: "Tools" },
-    { href: "/docs", label: "Docs" },
+    { href: "/chat", label: "Chat" },
     { href: "/upgrade", label: "Upgrade" },
+    { href: "/docs", label: "Docs" },
 ];
 
 function AuthTrigger({ setAuthOpen }: { setAuthOpen: (open: boolean) => void }) {
@@ -64,7 +64,11 @@ export default function TopNavbar() {
                                     key={link.href}
                                     href={link.href}
                                     prefetch={false}
-                                    className={`relative px-5 py-2 text-sm font-medium transition-colors ${isActive ? "text-accent" : "text-slate-400 hover:text-slate-200"
+                                    className={`relative px-5 py-2 text-sm font-medium transition-colors ${isActive
+                                        ? "text-accent"
+                                        : link.label === "Chat"
+                                            ? "text-accent drop-shadow-[0_0_8px_rgba(255,215,0,0.4)] hover:text-accent/80"
+                                            : "text-slate-400 hover:text-slate-200"
                                         }`}
                                 >
                                     {isActive && (
@@ -74,7 +78,17 @@ export default function TopNavbar() {
                                             transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                                         />
                                     )}
-                                    <span className="relative z-10">{link.label}</span>
+                                    <span className="relative z-10 flex items-center justify-center">
+                                        {link.label}
+                                        {link.label === "Chat" && (
+                                            <span
+                                                className="material-symbols-outlined absolute -top-1.5 -right-3 text-accent"
+                                                style={{ fontSize: "14px", fontVariationSettings: "'FILL' 1" }}
+                                            >
+                                                auto_awesome
+                                            </span>
+                                        )}
+                                    </span>
                                 </Link>
                             );
                         })}

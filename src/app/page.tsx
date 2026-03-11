@@ -326,7 +326,7 @@ export default function HomePage() {
 
 
       {/* Features Section */}
-      <section className="py-24 bg-surface" id="features">
+      <section className="pt-56 md:pt-72 pb-24 bg-surface" id="features">
         <div className="max-w-7xl mx-auto px-4">
           <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-8" staggerDelay={0.12}>
             {features.map((feature) => (

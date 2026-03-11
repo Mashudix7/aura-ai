@@ -76,15 +76,26 @@ export default function ToolsPage() {
             <Spotlight className="!fixed" />
 
             {/* Hero */}
-            <FadeIn className="text-center mb-12">
-                <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">
-                    Neural Tools
-                </h1>
-                <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-                    Powerful AI tools to boost productivity. Integrated neural networks at
-                    your fingertips.
-                </p>
-            </FadeIn>
+            <div className="max-w-4xl mx-auto text-center px-4 mb-16 relative z-10">
+                <FadeIn>
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 mb-6">
+                        <span className="flex h-2 w-2 rounded-full bg-accent animate-pulse" />
+                        <span className="text-accent text-xs font-bold tracking-widest uppercase">
+                            AI Output Generators
+                        </span>
+                    </div>
+                </FadeIn>
+                <FadeIn delay={0.15}>
+                    <h1 className="text-slate-100 tracking-tight text-5xl md:text-7xl font-black leading-tight mb-6">
+                        Neural <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent via-yellow-200 to-accent">Tools</span>
+                    </h1>
+                </FadeIn>
+                <FadeIn delay={0.3}>
+                    <p className="text-slate-400 text-lg md:text-xl font-medium max-w-2xl mx-auto leading-relaxed mb-4">
+                        Powerful AI tools to boost productivity. Integrated neural networks at your fingertips.
+                    </p>
+                </FadeIn>
+            </div>
 
             {/* Search and Filters */}
             <FadeIn delay={0.15} className="flex flex-col md:flex-row gap-6 items-center justify-between mb-10">
