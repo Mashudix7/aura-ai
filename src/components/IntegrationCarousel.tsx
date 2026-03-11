@@ -62,35 +62,41 @@ export default function IntegrationCarousel({ items }: IntegrationCarouselProps)
                         const { item, position, realIndex } = visibleItem;
 
                         // Calculate styles based on position
-                        let xOffset = position * 320; // Distance between cards
-                        let scale = position === 0 ? 1.2 : (Math.abs(position) === 1 ? 0.85 : 0.65);
-                        let zIndex = 10 - Math.abs(position);
-                        let opacity = position === 0 ? 1 : (Math.abs(position) === 1 ? 0.6 : 0.3);
+                        let xOffset = position * 340; // Spacing adjusted
+                        let scale = position === 0 ? 1 : (Math.abs(position) === 1 ? 0.75 : 0.6);
+                        let opacity = position === 0 ? 1 : (Math.abs(position) === 1 ? 0.5 : 0.15);
+
+                        // Ensure proper stacking order - center is highest, edges are lowest
+                        const zIndex = position === 0 ? 30 : (Math.abs(position) === 1 ? 20 : 10);
 
                         return (
                             <motion.div
                                 key={`${item.label}-${realIndex}`} // Use stable key relative to item content
                                 className="absolute shrink-0 flex items-center justify-center cursor-pointer"
                                 initial={{
-                                    x: xOffset + (position > 0 ? 100 : position < 0 ? -100 : 0),
-                                    scale: scale * 0.9,
-                                    opacity: 0
+                                    x: xOffset + (position > 0 ? 120 : position < 0 ? -120 : 0),
+                                    scale: scale * 0.8,
+                                    opacity: 0,
                                 }}
                                 animate={{
                                     x: xOffset,
                                     scale: scale,
                                     opacity: opacity,
-                                    zIndex: zIndex
                                 }}
                                 exit={{
-                                    x: xOffset - (position > 0 ? 100 : position < 0 ? -100 : 0),
-                                    scale: scale * 0.9,
-                                    opacity: 0
+                                    x: xOffset + (position < 0 ? -200 : 200), // Slide away further instead of shrinking awkwardly
+                                    scale: scale * 0.8,
+                                    opacity: 0,
                                 }}
-                                transition={{ duration: 0.6, ease: "easeOut" }}
+                                transition={{
+                                    type: "spring",
+                                    stiffness: 260,
+                                    damping: 30,
+                                    duration: 0.6 // Slightly softer spring
+                                }}
                                 style={{
-                                    filter: position !== 0 ? 'grayscale(40%) brightness(0.7)' : 'none',
-                                    cursor: 'pointer'
+                                    zIndex,
+                                    filter: position !== 0 ? 'grayscale(70%) brightness(0.5)' : 'drop-shadow(0 0 40px rgba(255,215,0,0.15))',
                                 }}
                                 onClick={() => {
                                     if (position === 1) handleNext();
@@ -109,7 +115,7 @@ export default function IntegrationCarousel({ items }: IntegrationCarouselProps)
                                 }}
                             >
                                 <div className={`w-full h-full flex justify-center items-center ${position !== 0 && "pointer-events-none"}`}>
-                                    <IntegrationCard {...item} />
+                                    <IntegrationCard {...item} isActive={position === 0} />
                                 </div>
                             </motion.div>
                         );
