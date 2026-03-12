@@ -9,11 +9,11 @@ const ALL_MODELS = [
     { id: "arcee-ai/trinity-large-preview:free", name: "Trinity Large", provider: "openrouter" },
 ];
 
-const SYSTEM_PROMPT = `You are Aura AI, an elite, highly intelligent, and precise AI assistant.
+const getSystemPrompt = (modelName: string) => `You are Aura AI, an elite, highly intelligent, and precise AI assistant.
 You speak concisely, with authority, and focus on delivering high-end, premium quality answers.
 You were created to assist professionals, executives, and power users.
 Make your responses highly analytical, well-structured, and exact.
-You are powered by the Gemini 2.5 Flash model.
+You are powered by the ${modelName} model.
 When appropriate, use markdown formatting to structure your responses with headings, bullet points, and code blocks.
 When the user sends an image, analyze it thoroughly and provide detailed, insightful observations.`;
 
@@ -111,13 +111,13 @@ export async function POST(req: Request) {
                     ...(msg.images && { images: msg.images }),
                 })
             );
-            stream = await streamGemini(geminiMessages, SYSTEM_PROMPT);
+            stream = await streamGemini(geminiMessages, getSystemPrompt(selectedModel.name));
         } else {
             // Use OpenRouter streaming
             stream = await streamOpenRouter(
                 sanitizedMessages,
                 selectedModel.id,
-                SYSTEM_PROMPT
+                getSystemPrompt(selectedModel.name)
             );
         }
 

@@ -6,55 +6,55 @@ import ToolCard from "@/components/ToolCard";
 import Spotlight from "@/components/Spotlight";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/AnimationWrappers";
 
-const categories = ["All", "Writing", "Coding", "Productivity", "Creative"];
+const categories = ["All", "Analysis", "Coding", "Writing", "Productivity"];
 
 const tools = [
     {
-        icon: "description",
-        title: "Resume Generator",
-        description: "Craft professional resumes tailored to any job description using AI-driven optimization.",
-        category: "Writing",
+        icon: "visibility",
+        title: "Vision Analyzer",
+        description: "Upload images to extract text, understand charts, or get detailed visual descriptions instantly.",
+        category: "Analysis",
     },
     {
         icon: "terminal",
         title: "Code Assistant",
-        description: "Debug, refactor, and generate code snippets across 20+ programming languages.",
+        description: "Debug, refactor, and generate clean code snippets across 20+ programming languages.",
         category: "Coding",
     },
     {
-        icon: "analytics",
-        title: "Document Analyzer",
-        description: "Summarize long PDFs and extract key insights instantly using advanced NLP.",
+        icon: "translate",
+        title: "Language Translator",
+        description: "Translate complex documents between 50+ languages while preserving original context and tone.",
         category: "Productivity",
     },
     {
-        icon: "school",
-        title: "Study Assistant",
-        description: "Create quizzes, flashcards, and study guides from your lecture notes or textbooks.",
-        category: "Productivity",
-    },
-    {
-        icon: "palette",
-        title: "Image Generator",
-        description: "Transform text prompts into high-resolution artistic imagery using DALL-E 3.",
-        category: "Creative",
-    },
-    {
-        icon: "mic",
-        title: "Audio Transcriber",
-        description: "Convert voice memos and meetings into accurate text with speaker diarization.",
-        category: "Productivity",
-    },
-    {
-        icon: "campaign",
-        title: "Marketing Copy AI",
-        description: "Generate high-converting ads, social posts, and email campaigns in seconds.",
+        icon: "edit_document",
+        title: "Creative Writer",
+        description: "Draft high-end emails, compelling blog posts, and marketing copy with precise phrasing.",
         category: "Writing",
     },
     {
-        icon: "business_center",
-        title: "Business Planner",
-        description: "Detailed market analysis and structured business plans for your startup idea.",
+        icon: "data_object",
+        title: "Data Extractor",
+        description: "Turn messy text or images into structured JSON data easily for your applications.",
+        category: "Analysis",
+    },
+    {
+        icon: "psychology",
+        title: "Logic & Math Solver",
+        description: "Tackle complex mathematical problems and logic puzzles with advanced reasoning models.",
+        category: "Coding",
+    },
+    {
+        icon: "lightbulb",
+        title: "Brainstorm Partner",
+        description: "Bounce ideas off elite AI models to overcome creative blocks and find innovative solutions.",
+        category: "Writing",
+    },
+    {
+        icon: "design_services",
+        title: "UI/UX Consultant",
+        description: "Share a screenshot of your app interface and receive expert design feedback and improvements.",
         category: "Productivity",
     },
 ];
