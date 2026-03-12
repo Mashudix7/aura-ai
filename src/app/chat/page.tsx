@@ -9,6 +9,12 @@ import { FadeIn } from "@/components/AnimationWrappers";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
 
+const MODELS = [
+    { id: "gemini-2.5-flash", name: "Aura AI 2.5" },
+    { id: "stepfun/step-3.5-flash:free", name: "Step 3.5 Flash" },
+    { id: "arcee-ai/trinity-large-preview:free", name: "Trinity Large" },
+];
+
 const SUPPORTED_IMAGE_TYPES = [
     "image/jpeg",
     "image/png",
@@ -32,6 +38,7 @@ interface Message {
     role: "user" | "assistant";
     content: string;
     images?: { data: string; mimeType: string }[];
+    modelName?: string;
 }
 
 /**
@@ -69,6 +76,9 @@ export default function ChatPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [selectedModelId, setSelectedModelId] = useState(MODELS[0].id);
+    const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+    const modelDropdownRef = useRef<HTMLDivElement>(null);
 
     // Image upload state
     const [attachedImages, setAttachedImages] = useState<ImageAttachment[]>([]);
@@ -98,6 +108,17 @@ export default function ChatPage() {
             return () => clearTimeout(timer);
         }
     }, [imageError]);
+
+    // Close model dropdown on outside click
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (modelDropdownRef.current && !modelDropdownRef.current.contains(e.target as Node)) {
+                setIsModelDropdownOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     /**
      * Process files for upload (validate and convert to base64)
@@ -252,9 +273,10 @@ export default function ChatPage() {
 
             // Create placeholder AI message
             const aiMessageId = crypto.randomUUID();
+            const currentModelName = MODELS.find(m => m.id === selectedModelId)?.name || "Aura AI 2.5";
             setMessages((prev) => [
                 ...prev,
-                { id: aiMessageId, role: "assistant", content: "" },
+                { id: aiMessageId, role: "assistant", content: "", modelName: currentModelName },
             ]);
 
             try {
@@ -262,6 +284,7 @@ export default function ChatPage() {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
+                        modelId: selectedModelId,
                         messages: updatedMessages.map((m) => ({
                             role: m.role === "assistant" ? "assistant" : "user",
                             content: m.content,
@@ -314,7 +337,7 @@ export default function ChatPage() {
                 setIsLoading(false);
             }
         },
-        [input, isLoading, messages, attachedImages]
+        [input, isLoading, messages, attachedImages, selectedModelId]
     );
 
     const handleNewChat = useCallback(() => {
@@ -452,7 +475,7 @@ export default function ChatPage() {
                             </div>
                             <div className="flex items-center justify-between">
                                 <p className="text-sm font-medium text-slate-200">
-                                    Aura AI 2.5
+                                    {MODELS.find(m => m.id === selectedModelId)?.name || "Aura AI 2.5"}
                                 </p>
                                 <span className="text-[10px] text-accent/70 bg-accent/10 px-2 py-0.5 rounded-full border border-accent/20">
                                     Multimodal
@@ -512,11 +535,55 @@ export default function ChatPage() {
                         )}
                     </div>
 
-                    <div className="mx-auto lg:absolute lg:left-1/2 lg:-translate-x-1/2">
-                        <div className="flex items-center gap-2 px-5 py-2.5 bg-white/[0.04] border border-white/[0.1] rounded-full font-medium text-sm text-slate-200 shadow-lg">
-                            <span>Aura AI 2.5</span>
+                    <div className="mx-auto lg:absolute lg:left-1/2 lg:-translate-x-1/2 relative" ref={modelDropdownRef}>
+                        <button
+                            onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+                            className="flex items-center gap-2 px-5 py-2.5 bg-white/[0.04] border border-white/[0.1] rounded-full font-medium text-sm text-slate-200 shadow-lg hover:border-accent/30 hover:bg-white/[0.07] transition-all cursor-pointer"
+                        >
+                            <span>{MODELS.find(m => m.id === selectedModelId)?.name || "Aura AI 2.5"}</span>
                             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        </div>
+                            <span className={`material-symbols-outlined text-[16px] text-slate-400 transition-transform ${isModelDropdownOpen ? 'rotate-180' : ''}`}>expand_more</span>
+                        </button>
+
+                        {/* Model Dropdown */}
+                        <AnimatePresence>
+                            {isModelDropdownOpen && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-56 bg-[#0a0a0a]/95 backdrop-blur-2xl border border-white/[0.1] rounded-2xl shadow-[0_16px_40px_rgba(0,0,0,0.6)] overflow-hidden z-50"
+                                >
+                                    <div className="p-2 space-y-1">
+                                        {MODELS.map((model) => (
+                                            <button
+                                                key={model.id}
+                                                onClick={() => {
+                                                    setSelectedModelId(model.id);
+                                                    setIsModelDropdownOpen(false);
+                                                }}
+                                                className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-between group ${
+                                                    selectedModelId === model.id
+                                                        ? "bg-accent/15 text-accent"
+                                                        : "text-slate-300 hover:bg-white/[0.06]"
+                                                }`}
+                                            >
+                                                <span className="flex items-center gap-2.5">
+                                                    <span className={`material-symbols-outlined text-[18px] ${
+                                                        selectedModelId === model.id ? "text-accent" : "text-slate-500 group-hover:text-slate-300"
+                                                    }`}>smart_toy</span>
+                                                    {model.name}
+                                                </span>
+                                                {selectedModelId === model.id && (
+                                                    <span className="material-symbols-outlined text-accent text-[16px]">check</span>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
 
                     {/* Right: Actions */}
@@ -544,7 +611,7 @@ export default function ChatPage() {
                                 {getGreeting()}{session?.user?.name ? `, ${session.user.name.split(" ")[0]}` : ""}
                             </h2>
                             <p className="text-slate-400 text-sm max-w-md mx-auto">
-                                How can Aura assist your workflow today? I&apos;m powered by <span className="text-accent font-medium">Gemini 2.5 Flash</span> for lightning-fast responses.
+                                How can Aura assist your workflow today? Currently using <span className="text-accent font-medium">{MODELS.find(m => m.id === selectedModelId)?.name || "Aura AI 2.5"}</span> for lightning-fast responses.
                             </p>
 
                             {/* Suggestion Chips */}
@@ -589,6 +656,7 @@ export default function ChatPage() {
                                 index={i}
                                 isThinking={isThinking}
                                 images={msg.images}
+                                modelName={msg.modelName}
                             />
                         );
                     })}
@@ -753,7 +821,7 @@ export default function ChatPage() {
                         </div>
                     </motion.div>
                     <p className="text-center text-[10px] text-slate-500 mt-4 uppercase tracking-[0.2em] font-medium opacity-80">
-                        Powered by Gemini 2.5 Flash • Aura AI v4.2.0
+                        Powered by {selectedModelId === "gemini-2.5-flash" ? "Gemini" : "OpenRouter"} • {MODELS.find(m => m.id === selectedModelId)?.name || "Aura AI 2.5"}
                     </p>
                 </div>
             </main>

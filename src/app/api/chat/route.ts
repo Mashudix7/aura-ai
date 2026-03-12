@@ -1,5 +1,13 @@
 import { streamGemini, SUPPORTED_IMAGE_TYPES } from "@/lib/gemini";
-import type { ChatMessage, ImageAttachment } from "@/lib/gemini";
+import type { ChatMessage } from "@/lib/gemini";
+import { streamOpenRouter } from "@/lib/openrouter";
+
+// All available models — Gemini + OpenRouter
+const ALL_MODELS = [
+    { id: "gemini-2.5-flash", name: "Aura AI 2.5", provider: "gemini" },
+    { id: "stepfun/step-3.5-flash:free", name: "Step 3.5 Flash", provider: "openrouter" },
+    { id: "arcee-ai/trinity-large-preview:free", name: "Trinity Large", provider: "openrouter" },
+];
 
 const SYSTEM_PROMPT = `You are Aura AI, an elite, highly intelligent, and precise AI assistant.
 You speak concisely, with authority, and focus on delivering high-end, premium quality answers.
@@ -13,9 +21,20 @@ When the user sends an image, analyze it thoroughly and provide detailed, insigh
 const MAX_IMAGE_SIZE_BYTES = 4 * 1024 * 1024;
 const MAX_IMAGES_PER_MESSAGE = 5;
 
+interface ImageAttachment {
+    data: string;
+    mimeType: string;
+}
+
+interface IncomingMessage {
+    role: string;
+    content: string;
+    images?: ImageAttachment[];
+}
+
 export async function POST(req: Request) {
     try {
-        const { messages } = await req.json();
+        const { messages, modelId } = await req.json();
 
         if (!messages || messages.length === 0) {
             return new Response(
@@ -24,10 +43,17 @@ export async function POST(req: Request) {
             );
         }
 
+        // Find the selected model, default to Gemini
+        const selectedModel = ALL_MODELS.find((m) => m.id === modelId) || ALL_MODELS[0];
+
         // Validate and sanitize messages with image attachments
-        const sanitizedMessages: ChatMessage[] = messages.map(
-            (msg: { role: string; content: string; images?: ImageAttachment[] }) => {
-                const sanitized: ChatMessage = {
+        const sanitizedMessages = messages.map(
+            (msg: IncomingMessage) => {
+                const sanitized: {
+                    role: string;
+                    content: string;
+                    images?: ImageAttachment[];
+                } = {
                     role: msg.role,
                     content: msg.content || "",
                 };
@@ -74,7 +100,26 @@ export async function POST(req: Request) {
             }
         );
 
-        const stream = await streamGemini(sanitizedMessages, SYSTEM_PROMPT);
+        let stream: ReadableStream<Uint8Array>;
+
+        if (selectedModel.provider === "gemini") {
+            // Use Gemini streaming
+            const geminiMessages: ChatMessage[] = sanitizedMessages.map(
+                (msg: { role: string; content: string; images?: ImageAttachment[] }) => ({
+                    role: msg.role,
+                    content: msg.content,
+                    ...(msg.images && { images: msg.images }),
+                })
+            );
+            stream = await streamGemini(geminiMessages, SYSTEM_PROMPT);
+        } else {
+            // Use OpenRouter streaming
+            stream = await streamOpenRouter(
+                sanitizedMessages,
+                selectedModel.id,
+                SYSTEM_PROMPT
+            );
+        }
 
         return new Response(stream, {
             headers: {
