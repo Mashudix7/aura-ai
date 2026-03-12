@@ -11,28 +11,26 @@ const docSections = [
         icon: "rocket_launch",
         links: [
             { title: "Introduction", href: "#" },
-            { title: "Quick Start Guide", href: "#" },
-            { title: "Installation", href: "#" },
+            { title: "Account & Tiers", href: "/upgrade" },
         ],
     },
     {
         title: "Features",
         icon: "auto_awesome",
         links: [
-            { title: "Neural Chat", href: "#" },
-            { type: "badge", badge: "Pro", title: "Image Analysis", href: "#" },
-            { title: "Data Analytics", href: "#" },
-            { title: "Workflow Automation", href: "#" },
+            { title: "Aura Chat", href: "/chat" },
+            { type: "badge", badge: "Pro", title: "Vision Analyzer", href: "/tools" },
+            { title: "AI Tools", href: "/tools" },
+            { title: "Chat History", href: "/chat" },
         ],
     },
     {
-        title: "API Reference",
-        icon: "api",
+        title: "Models",
+        icon: "smart_toy",
         links: [
-            { title: "Authentication", href: "#" },
-            { title: "Endpoints", href: "#" },
-            { title: "Rate Limits", href: "#" },
-            { title: "Webhooks", href: "#" },
+            { title: "Gemini 2.5 Flash", href: "/chat" },
+            { title: "Step 3.5 Flash", href: "/chat" },
+            { title: "Trinity Large", href: "/chat" },
         ],
     },
     {
@@ -99,16 +97,16 @@ export default function DocsPage() {
 
                             <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6" staggerDelay={0.06}>
                                 <StaggerItem>
-                                    <Link href="/chat" className="block p-5 rounded-2xl bg-white/[0.03] border border-white/[0.08] hover:border-accent/40 hover:bg-white/[0.05] transition-all group">
+                                    <Link href="/chat" className="block p-5 rounded-2xl bg-white/[0.03] border border-white/[0.08] hover:border-accent/40 hover:bg-white/[0.05] transition-all group hover:shadow-[0_0_20px_rgba(255,215,0,0.1)]">
                                         <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center mb-4 group-hover:bg-accent/20 transition-colors">
                                             <span className="material-symbols-outlined text-accent">chat_bubble</span>
                                         </div>
-                                        <h4 className="text-lg font-semibold text-white mb-1 group-hover:text-accent transition-colors">Neural Chat</h4>
+                                        <h4 className="text-lg font-semibold text-white mb-1 group-hover:text-accent transition-colors">Aura Chat</h4>
                                         <p className="text-sm text-slate-400">Experience lighting-fast conversations powered by Gemini.</p>
                                     </Link>
                                 </StaggerItem>
                                 <StaggerItem>
-                                    <Link href="/tools" className="block p-5 rounded-2xl bg-white/[0.03] border border-white/[0.08] hover:border-emerald-400/40 hover:bg-white/[0.05] transition-all group">
+                                    <Link href="/tools" className="block p-5 rounded-2xl bg-white/[0.03] border border-white/[0.08] hover:border-emerald-400/40 hover:bg-white/[0.05] transition-all group hover:shadow-[0_0_20px_rgba(52,211,153,0.1)]">
                                         <div className="w-10 h-10 rounded-xl bg-emerald-400/10 flex items-center justify-center mb-4 group-hover:bg-emerald-400/20 transition-colors">
                                             <span className="material-symbols-outlined text-emerald-400">build</span>
                                         </div>

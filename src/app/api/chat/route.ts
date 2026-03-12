@@ -1,6 +1,8 @@
 import { streamGemini, SUPPORTED_IMAGE_TYPES } from "@/lib/gemini";
 import type { ChatMessage } from "@/lib/gemini";
 import { streamOpenRouter } from "@/lib/openrouter";
+import { auth } from "@/auth";
+import prisma from "@/lib/prisma";
 
 // All available models — Gemini + OpenRouter
 const ALL_MODELS = [
@@ -34,7 +36,7 @@ interface IncomingMessage {
 
 export async function POST(req: Request) {
     try {
-        const { messages, modelId } = await req.json();
+        const { messages, modelId, threadId } = await req.json();
 
         if (!messages || messages.length === 0) {
             return new Response(
@@ -100,13 +102,79 @@ export async function POST(req: Request) {
             }
         );
 
+        // --- Subscription & Usage Logic ---
+        const session = await auth();
+        if (!session?.user?.id) {
+            return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+        }
+
+        const user = await (prisma.user as any).findUnique({
+            where: { id: session.user.id },
+            select: { subscription_tier: true, promptCount: true, lastPromptDate: true }
+        });
+
+        if (!user) {
+            return new Response(JSON.stringify({ error: "User not found" }), { status: 404 });
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // start of today
+
+        let currentPromptCount = user.promptCount;
+        const lastPromptDate = user.lastPromptDate ? new Date(user.lastPromptDate) : null;
+        if (lastPromptDate) {
+            lastPromptDate.setHours(0, 0, 0, 0);
+        }
+
+        // Reset if it's a new day
+        if (!lastPromptDate || lastPromptDate.getTime() !== today.getTime()) {
+            currentPromptCount = 0;
+        }
+
+        // Process logic based on tier
+        if (user.subscription_tier === "Standard") {
+            // Check prompt limit
+            if (currentPromptCount >= 20) {
+                 return new Response(JSON.stringify({ error: "Daily prompt limit reached for Standard tier. Please upgrade for unlimited access." }), { status: 403 });
+            }
+
+            // Check model selection (only Aura AI 2.5)
+            if (selectedModel.id !== "gemini-2.5-flash") {
+                 return new Response(JSON.stringify({ error: "Premium models require Elite Access." }), { status: 403 });
+            }
+
+            // Check file uploads (not allowed)
+            const hasImages = sanitizedMessages.some((msg: { images?: ImageAttachment[] }) => msg.images && msg.images.length > 0);
+            if (hasImages) {
+                 return new Response(JSON.stringify({ error: "Image uploads require Elite Access." }), { status: 403 });
+            }
+        }
+
+        // --- End Subscription Logic ---
+
+        // Log user prompt if threadId exists
+        const lastUserMessage = sanitizedMessages[sanitizedMessages.length - 1];
+        if (threadId && lastUserMessage?.content && lastUserMessage.role === "user") {
+            try {
+                await (prisma.message as any).create({
+                    data: {
+                        threadId,
+                        role: "user",
+                        content: lastUserMessage.content,
+                    }
+                });
+            } catch (err) {
+                console.error("Failed to save user message to DB:", err);
+            }
+        }
+
         let stream: ReadableStream<Uint8Array>;
 
         if (selectedModel.provider === "gemini") {
             // Use Gemini streaming
             const geminiMessages: ChatMessage[] = sanitizedMessages.map(
                 (msg: { role: string; content: string; images?: ImageAttachment[] }) => ({
-                    role: msg.role,
+                    role: msg.role as 'user' | 'assistant',
                     content: msg.content,
                     ...(msg.images && { images: msg.images }),
                 })
@@ -121,7 +189,47 @@ export async function POST(req: Request) {
             );
         }
 
-        return new Response(stream, {
+        // Increment count on successful request start
+        await (prisma.user as any).update({
+            where: { id: session.user.id },
+            data: { 
+                promptCount: currentPromptCount + 1,
+                lastPromptDate: new Date()
+            }
+        });
+
+        // Create a TransformStream to log the AI response to the database
+        let fullAiResponse = "";
+        const transformStream = new TransformStream({
+            transform(chunk, controller) {
+                fullAiResponse += new TextDecoder().decode(chunk);
+                controller.enqueue(chunk);
+            },
+            async flush(controller) {
+                if (threadId && fullAiResponse) {
+                    try {
+                        await (prisma.message as any).create({
+                            data: {
+                                threadId,
+                                role: "assistant", // "assistant" model
+                                content: fullAiResponse,
+                            }
+                        });
+                        // Update thread's updatedAt
+                        await (prisma.thread as any).update({
+                            where: { id: threadId },
+                            data: { updatedAt: new Date() }
+                        });
+                    } catch (err) {
+                        console.error("Failed to save assistant message to DB:", err);
+                    }
+                }
+            }
+        });
+
+        const outputStream = stream.pipeThrough(transformStream);
+
+        return new Response(outputStream, {
             headers: {
                 "Content-Type": "text/plain; charset=utf-8",
                 "Cache-Control": "no-cache",
