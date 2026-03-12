@@ -29,6 +29,12 @@ body {
   color: #fff;
 }
 
+/* Icons */
+.material-symbols-outlined {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 /* Glassmorphism Utilities */
 .glass {
   background: rgba(255, 255, 255, 0.05);

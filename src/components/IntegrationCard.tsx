@@ -19,7 +19,7 @@ export default function IntegrationCard({ icon, label, image, isActive = false }
                     fill
                     sizes="(max-width: 768px) 100vw, 320px"
                     className={`object-cover transition-all duration-700 will-change-transform ${isActive ? 'opacity-70 scale-110' : 'opacity-30 group-hover:opacity-50 scale-100'}`}
-                    loading="lazy"
+                    priority={isActive}
                 />
                 <div className={`absolute inset-0 z-10 transition-colors duration-500 bg-gradient-to-t ${isActive ? 'from-[#050510] via-[#050510]/60 to-transparent' : 'from-[#050510] via-[#050510]/90 to-black/40'}`} />
             </div>

@@ -1,12 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 interface ToolCardProps {
     icon: string;
     title: string;
     description: string;
     category: string;
+    actionPrompt?: string;
 }
 
 export default function ToolCard({
@@ -14,7 +16,17 @@ export default function ToolCard({
     title,
     description,
     category,
+    actionPrompt,
 }: ToolCardProps) {
+    const router = useRouter();
+
+    const handleLaunch = () => {
+        if (actionPrompt) {
+            router.push(`/chat?prompt=${encodeURIComponent(actionPrompt)}`);
+        } else {
+            router.push("/chat");
+        }
+    };
     return (
         <motion.div
             className="glass-card rounded-2xl p-6 border border-white/10 flex flex-col gap-4 group cursor-pointer relative overflow-hidden"
@@ -53,7 +65,8 @@ export default function ToolCard({
                     {category}
                 </span>
                 <motion.button
-                    className="bg-accent text-background text-xs font-bold px-4 py-1.5 rounded-lg"
+                    onClick={handleLaunch}
+                    className="bg-accent text-background text-xs font-bold px-4 py-1.5 rounded-lg z-20 cursor-pointer"
                     whileHover={{ scale: 1.05, boxShadow: "0 0 15px rgba(255,215,0,0.3)" }}
                     whileTap={{ scale: 0.95 }}
                 >

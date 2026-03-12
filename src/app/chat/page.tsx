@@ -9,6 +9,12 @@ import { FadeIn } from "@/components/AnimationWrappers";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
 
+interface UserUsage {
+    tier: string;
+    promptCount: number;
+    lastPromptDate: string | null;
+}
+
 const MODELS = [
     { id: "gemini-2.5-flash", name: "Aura AI 2.5" },
     { id: "stepfun/step-3.5-flash:free", name: "Step 3.5 Flash" },
@@ -67,6 +73,10 @@ function formatFileSize(bytes: number): string {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+// Simple client-side cache for API responses to prevent redundant re-fetching
+const apiCache: Record<string, { data: any; timestamp: number }> = {};
+const CACHE_TTL_MS = 1000 * 60 * 5; // 5 minutes
+
 export default function ChatPage() {
     const { data: session } = useSession();
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -85,6 +95,122 @@ export default function ChatPage() {
     const [isDragOver, setIsDragOver] = useState(false);
     const [imageError, setImageError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // User subscription & usage state
+    const [usage, setUsage] = useState<UserUsage | null>(null);
+    const [isFetchingUsage, setIsFetchingUsage] = useState(true);
+
+    // Chat History state
+    const [threads, setThreads] = useState<any[]>([]);
+    const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
+    const [isLoadingThread, setIsLoadingThread] = useState(false);
+
+    // Default to Standard restrictions unless explicitly Elite Access
+    const isStandard = usage?.tier !== "Elite Access";
+    const promptsRemaining = isStandard ? Math.max(0, 20 - (usage?.promptCount || 0)) : null;
+    const isLimitReached = isStandard && (usage?.promptCount || 0) >= 20;
+
+    // Fetch user usage
+    const fetchUsage = useCallback(async (force = false) => {
+        if (!session?.user?.id) return;
+        const cacheKey = `usage_${session.user.id}`;
+
+        if (!force && apiCache[cacheKey] && Date.now() - apiCache[cacheKey].timestamp < CACHE_TTL_MS) {
+            setUsage(apiCache[cacheKey].data);
+            if (apiCache[cacheKey].data.tier === "Standard") {
+                setSelectedModelId(MODELS[0].id);
+            }
+            setIsFetchingUsage(false);
+            return;
+        }
+
+        try {
+            const res = await fetch("/api/user/usage");
+            if (res.ok) {
+                const data = await res.json();
+                apiCache[cacheKey] = { data, timestamp: Date.now() };
+                setUsage(data);
+                if (data.tier === "Standard") {
+                    setSelectedModelId(MODELS[0].id); // Force basic model for standard
+                }
+            }
+        } catch (error) {
+            console.error("Failed to fetch usage:", error);
+        } finally {
+            setIsFetchingUsage(false);
+        }
+    }, [session?.user?.id]);
+
+    // Fetch user threads
+    const fetchThreads = useCallback(async (force = false) => {
+        if (!session?.user?.id) return;
+        const cacheKey = `threads_${session.user.id}`;
+
+        if (!force && apiCache[cacheKey] && Date.now() - apiCache[cacheKey].timestamp < CACHE_TTL_MS) {
+            setThreads(apiCache[cacheKey].data);
+            return;
+        }
+
+        try {
+            const res = await fetch("/api/chat/threads");
+            if (res.ok) {
+                const data = await res.json();
+                apiCache[cacheKey] = { data, timestamp: Date.now() };
+                setThreads(data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch threads:", error);
+        }
+    }, [session?.user?.id]);
+
+    // Load specific thread UI
+    const loadThread = async (id: string) => {
+        if (id === currentThreadId) return;
+        setIsLoadingThread(true);
+        setCurrentThreadId(id);
+        try {
+            const res = await fetch(`/api/chat/threads/${id}`);
+            if (res.ok) {
+                const thread = await res.json();
+                const loadedMessages = thread.messages.map((m: any) => ({
+                    id: m.id,
+                    role: m.role as "user" | "assistant",
+                    content: m.content || "",
+                }));
+                setMessages(loadedMessages);
+                
+                // If on mobile, close sidebar after selecting
+                if (window.innerWidth < 1024) {
+                    setIsSidebarOpen(false);
+                }
+            }
+        } catch (err) {
+            console.error("Failed to load thread:", err);
+        } finally {
+            setIsLoadingThread(false);
+        }
+    };
+
+    useEffect(() => {
+        if (session?.user) {
+            fetchUsage();
+            fetchThreads();
+        } else {
+            setIsFetchingUsage(false);
+        }
+    }, [session?.user, fetchUsage, fetchThreads]);
+
+    // Handle initial prompt from URL query params (e.g. from Tools launch)
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const params = new URLSearchParams(window.location.search);
+            const promptParam = params.get("prompt");
+            if (promptParam) {
+                setInput(promptParam);
+                setTimeout(() => textareaRef.current?.focus(), 100);
+            }
+        }
+    }, []);
 
     // Auto-scroll to bottom of messages
     useEffect(() => {
@@ -125,6 +251,11 @@ export default function ChatPage() {
      */
     const processFiles = useCallback(
         async (files: FileList | File[]) => {
+            if (isStandard) {
+                setImageError("File uploads require Elite Access.");
+                return;
+            }
+
             const fileArray = Array.from(files);
             const remainingSlots = MAX_IMAGES - attachedImages.length;
 
@@ -250,6 +381,11 @@ export default function ChatPage() {
 
             if ((!trimmed && !hasImages) || isLoading) return;
 
+            if (isLimitReached) {
+                setImageError("Daily prompt limit reached for Standard tier. Please upgrade.");
+                return;
+            }
+
             // Prepare images for the message
             const messageImages = hasImages
                 ? attachedImages.map((img) => ({
@@ -271,6 +407,26 @@ export default function ChatPage() {
             setAttachedImages([]);
             setIsLoading(true);
 
+            // Create thread if none exists
+            let actualThreadId = currentThreadId;
+            if (!actualThreadId) {
+                try {
+                    const threadRes = await fetch("/api/chat/threads", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ title: trimmed ? trimmed.substring(0, 40) : "New Conversation" }),
+                    });
+                    if (threadRes.ok) {
+                        const newThread = await threadRes.json();
+                        setCurrentThreadId(newThread.id);
+                        actualThreadId = newThread.id;
+                        fetchThreads(true); // Refresh list in sidebar
+                    }
+                } catch (e) {
+                    console.error("Error creating thread:", e);
+                }
+            }
+
             // Create placeholder AI message
             const aiMessageId = crypto.randomUUID();
             const currentModelName = MODELS.find(m => m.id === selectedModelId)?.name || "Aura AI 2.5";
@@ -285,6 +441,7 @@ export default function ChatPage() {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         modelId: selectedModelId,
+                        threadId: actualThreadId,
                         messages: updatedMessages.map((m) => ({
                             role: m.role === "assistant" ? "assistant" : "user",
                             content: m.content,
@@ -328,19 +485,21 @@ export default function ChatPage() {
                             ? {
                                 ...msg,
                                 content:
-                                    "⚠️ Oops, something went wrong. Please try again.",
+                                    err instanceof Error ? `⚠️ ${err.message}` : "⚠️ Oops, something went wrong. Please try again.",
                             }
                             : msg
                     )
                 );
             } finally {
                 setIsLoading(false);
+                fetchUsage(true); // Refresh usage after generation
             }
         },
-        [input, isLoading, messages, attachedImages, selectedModelId]
+        [input, isLoading, messages, attachedImages, selectedModelId, isLimitReached, fetchUsage, fetchThreads, currentThreadId]
     );
 
     const handleNewChat = useCallback(() => {
+        setCurrentThreadId(null);
         setMessages([]);
         setInput("");
         setAttachedImages([]);
@@ -488,8 +647,9 @@ export default function ChatPage() {
                                 <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">Current Session</span>
                             </div>
 
-                            {messages.length > 0 ? (
-                                <div className="w-full text-left px-4 py-3 rounded-2xl bg-white/[0.06] border border-white/[0.05] flex flex-col gap-1.5">
+                            {/* Render active un-saved session if any */}
+                            {currentThreadId === null && messages.length > 0 && (
+                                <div className="w-full text-left px-4 py-3 rounded-2xl bg-white/[0.06] border border-white/[0.05] flex flex-col gap-1.5 mb-2">
                                     <span className="text-sm font-medium text-slate-200 truncate w-full flex items-center gap-2">
                                         <span className="material-symbols-outlined text-accent text-[14px]">chat_bubble</span>
                                         {messages[0].content
@@ -500,11 +660,40 @@ export default function ChatPage() {
                                     </span>
                                     <span className="text-[10px] text-slate-500">{messages.length} messages</span>
                                 </div>
+                            )}
+
+                            {/* Render historical threads */}
+                            {threads.length > 0 ? (
+                                threads.map((thread) => (
+                                    <button
+                                        key={thread.id}
+                                        onClick={() => loadThread(thread.id)}
+                                        disabled={isLoadingThread}
+                                        className={`w-full text-left px-4 py-3 rounded-2xl flex flex-col gap-1.5 transition-all
+                                            ${currentThreadId === thread.id
+                                                ? "bg-white/[0.06] border border-white/[0.05]"
+                                                : "bg-transparent hover:bg-white/[0.02] border border-transparent hover:border-white/[0.02]"
+                                            }`}
+                                    >
+                                        <span className={`text-sm font-medium truncate w-full flex items-center gap-2 
+                                            ${currentThreadId === thread.id ? "text-slate-200" : "text-slate-400"}`}
+                                        >
+                                            <span className={`material-symbols-outlined text-[14px] 
+                                                ${currentThreadId === thread.id ? "text-accent" : "text-slate-500"}`}
+                                            >
+                                                chat_bubble
+                                            </span>
+                                            {thread.title}
+                                        </span>
+                                    </button>
+                                ))
                             ) : (
-                                <div className="px-4 py-6 text-center">
-                                    <span className="material-symbols-outlined text-slate-600 text-3xl mb-2 block">forum</span>
-                                    <p className="text-xs text-slate-500">Start a conversation to see it here</p>
-                                </div>
+                                currentThreadId === null && messages.length === 0 && (
+                                    <div className="px-4 py-6 text-center">
+                                        <span className="material-symbols-outlined text-slate-600 text-3xl mb-2 block">forum</span>
+                                        <p className="text-xs text-slate-500">Start a conversation to see it here</p>
+                                    </div>
+                                )
                             )}
                         </div>
                     </motion.aside>
@@ -553,33 +742,51 @@ export default function ChatPage() {
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: -8, scale: 0.95 }}
                                     transition={{ duration: 0.15 }}
-                                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-56 bg-[#0a0a0a]/95 backdrop-blur-2xl border border-white/[0.1] rounded-2xl shadow-[0_16px_40px_rgba(0,0,0,0.6)] overflow-hidden z-50"
+                                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 bg-[#0a0a0a]/95 backdrop-blur-2xl border border-white/[0.1] rounded-2xl shadow-[0_16px_40px_rgba(0,0,0,0.6)] overflow-hidden z-50"
                                 >
                                     <div className="p-2 space-y-1">
-                                        {MODELS.map((model) => (
-                                            <button
-                                                key={model.id}
-                                                onClick={() => {
-                                                    setSelectedModelId(model.id);
-                                                    setIsModelDropdownOpen(false);
-                                                }}
-                                                className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-between group ${
-                                                    selectedModelId === model.id
-                                                        ? "bg-accent/15 text-accent"
-                                                        : "text-slate-300 hover:bg-white/[0.06]"
-                                                }`}
-                                            >
-                                                <span className="flex items-center gap-2.5">
-                                                    <span className={`material-symbols-outlined text-[18px] ${
-                                                        selectedModelId === model.id ? "text-accent" : "text-slate-500 group-hover:text-slate-300"
-                                                    }`}>smart_toy</span>
-                                                    {model.name}
-                                                </span>
-                                                {selectedModelId === model.id && (
-                                                    <span className="material-symbols-outlined text-accent text-[16px]">check</span>
-                                                )}
-                                            </button>
-                                        ))}
+                                        {MODELS.map((model) => {
+                                            const disabled = isStandard && model.id !== "gemini-2.5-flash";
+                                            return (
+                                                <button
+                                                    key={model.id}
+                                                    disabled={disabled}
+                                                    onClick={() => {
+                                                        setSelectedModelId(model.id);
+                                                        setIsModelDropdownOpen(false);
+                                                    }}
+                                                    className={`w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-between group ${
+                                                        disabled ? "opacity-50 cursor-not-allowed" :
+                                                        selectedModelId === model.id
+                                                            ? "bg-accent/15 text-accent"
+                                                            : "text-slate-300 hover:bg-white/[0.06]"
+                                                    }`}
+                                                >
+                                                    <span className="flex items-center gap-2.5">
+                                                        <span className={`material-symbols-outlined text-[18px] ${
+                                                            selectedModelId === model.id ? "text-accent" : "text-slate-500 group-hover:text-slate-300"
+                                                        }`}>smart_toy</span>
+                                                        {model.name}
+                                                    </span>
+                                                    <div className="flex items-center gap-2">
+                                                        {disabled && (
+                                                            <span className="material-symbols-outlined text-[14px] text-slate-500">lock</span>
+                                                        )}
+                                                        {selectedModelId === model.id && (
+                                                            <span className="material-symbols-outlined text-accent text-[16px]">check</span>
+                                                        )}
+                                                    </div>
+                                                </button>
+                                            )
+                                        })}
+                                        {isStandard && (
+                                            <div className="px-3 pt-3 pb-2 mt-2 border-t border-white/10 flex flex-col gap-2">
+                                                <span className="text-xs text-slate-400">Upgrade to unlock all premium AI models.</span>
+                                                <Link href="/upgrade" className="text-xs text-accent font-semibold hover:underline flex items-center gap-1">
+                                                    Upgrade Now <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                                                </Link>
+                                            </div>
+                                        )}
                                     </div>
                                 </motion.div>
                             )}
@@ -619,11 +826,12 @@ export default function ChatPage() {
                                 {[
                                     { icon: "code", text: "Write a React component" },
                                     { icon: "psychology", text: "Explain a concept" },
-                                    { icon: "image", text: "Analyze an image" },
+                                    { icon: "image", text: "Analyze an image", disabled: isStandard },
                                     { icon: "analytics", text: "Analyze this data" },
                                 ].map((suggestion) => (
                                     <motion.button
                                         key={suggestion.text}
+                                        disabled={suggestion.disabled}
                                         onClick={() => {
                                             if (suggestion.text === "Analyze an image") {
                                                 fileInputRef.current?.click();
@@ -632,12 +840,14 @@ export default function ChatPage() {
                                                 textareaRef.current?.focus();
                                             }
                                         }}
-                                        className="flex items-center gap-2 px-4 py-2.5 bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] hover:border-accent/30 rounded-2xl text-sm text-slate-300 hover:text-slate-100 transition-all group"
-                                        whileHover={{ scale: 1.03, y: -2 }}
-                                        whileTap={{ scale: 0.97 }}
+                                        title={suggestion.disabled ? "File uploads require Elite Access" : ""}
+                                        className={`flex items-center gap-2 px-4 py-2.5 bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] hover:border-accent/30 rounded-2xl text-sm text-slate-300 hover:text-slate-100 transition-all group ${suggestion.disabled ? "opacity-50 cursor-not-allowed hover:bg-white/[0.03] hover:border-white/[0.08]" : ""}`}
+                                        whileHover={!suggestion.disabled ? { scale: 1.03, y: -2 } : {}}
+                                        whileTap={!suggestion.disabled ? { scale: 0.97 } : {}}
                                     >
-                                        <span className="material-symbols-outlined text-[16px] text-slate-500 group-hover:text-accent transition-colors">{suggestion.icon}</span>
+                                        <span className={`material-symbols-outlined text-[16px] text-slate-500 transition-colors ${!suggestion.disabled && "group-hover:text-accent"}`}>{suggestion.icon}</span>
                                         {suggestion.text}
+                                        {suggestion.disabled && <span className="material-symbols-outlined text-[12px] text-slate-500 ml-1">lock</span>}
                                     </motion.button>
                                 ))}
                             </div>
@@ -666,7 +876,44 @@ export default function ChatPage() {
                 </div>
 
                 {/* Input Area */}
-                <div className="p-4 md:p-6 bg-transparent shrink-0 relative z-20 w-full max-w-4xl mx-auto">
+                <div className="p-4 md:p-6 bg-transparent shrink-0 relative z-20 w-full max-w-4xl mx-auto flex flex-col gap-2">
+                    
+                    {/* Prompt Limit Warning */}
+                    <AnimatePresence>
+                        {isStandard && promptsRemaining !== null && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10, height: 0 }}
+                                animate={{ opacity: 1, y: 0, height: "auto" }}
+                                exit={{ opacity: 0, y: 10, height: 0 }}
+                                className={`flex items-center justify-between px-5 py-2.5 rounded-2xl border backdrop-blur-md text-sm transition-colors ${
+                                    isLimitReached 
+                                        ? "bg-red-500/10 border-red-500/30 text-red-200" 
+                                        : promptsRemaining <= 5 
+                                            ? "bg-yellow-500/10 border-yellow-500/30 text-yellow-200/90" 
+                                            : "bg-white/[0.03] border-white/10 text-slate-400"
+                                }`}
+                            >
+                                <div className="flex items-center gap-2.5">
+                                    <span className="material-symbols-outlined text-[18px]">
+                                        {isLimitReached ? "error" : promptsRemaining <= 5 ? "warning" : "info"}
+                                    </span>
+                                    <span>
+                                        {isLimitReached 
+                                            ? "You've reached your daily limit of 20 prompts." 
+                                            : `You have ${promptsRemaining} prompt${promptsRemaining !== 1 ? 's' : ''} remaining today.`}
+                                    </span>
+                                </div>
+                                <Link href="/upgrade" className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg border transition-all hover:scale-105 active:scale-95 ${
+                                    isLimitReached || promptsRemaining <= 5
+                                        ? "bg-accent text-background border-accent shadow-[0_0_15px_rgba(255,215,0,0.3)]"
+                                        : "border-white/20 hover:border-accent hover:text-accent"
+                                }`}>
+                                    Upgrade
+                                </Link>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
                     {/* Image Error Toast */}
                     <AnimatePresence>
                         {imageError && (
@@ -760,20 +1007,28 @@ export default function ChatPage() {
 
                         {/* Input row */}
                         <div className="p-2 flex items-end gap-2">
-                            <div className="flex items-center px-1">
+                            <div className="flex items-center px-1 relative group/upload">
                                 <motion.button
                                     onClick={() => fileInputRef.current?.click()}
-                                    className={`w-[44px] h-[48px] flex items-center justify-center rounded-2xl transition-all ${attachedImages.length > 0
+                                    disabled={isStandard}
+                                    className={`w-[44px] h-[48px] flex items-center justify-center rounded-2xl transition-all ${
+                                        isStandard ? "opacity-50 cursor-not-allowed text-slate-500 bg-white/5" :
+                                        attachedImages.length > 0
                                         ? "text-accent bg-accent/10"
                                         : "text-slate-400 hover:text-accent hover:bg-accent/10"
                                         }`}
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.9 }}
-                                    title={`Attach image (${attachedImages.length}/${MAX_IMAGES})`}
+                                    whileHover={!isStandard ? { scale: 1.1 } : {}}
+                                    whileTap={!isStandard ? { scale: 0.9 } : {}}
                                 >
                                     <span className="material-symbols-outlined text-[22px]">
                                         {attachedImages.length > 0 ? "image" : "attach_file"}
                                     </span>
+                                    {isStandard && (
+                                        <div className="absolute opacity-0 group-hover/upload:opacity-100 transition-opacity bottom-full mb-2 left-1/2 -translate-x-1/2 whitespace-nowrap bg-black/80 backdrop-blur border border-white/10 text-slate-200 text-xs px-3 py-1.5 rounded-lg pointer-events-none z-50 flex items-center gap-1.5">
+                                            <span className="material-symbols-outlined text-[14px] text-accent">lock</span>
+                                            File uploads require Elite Access
+                                        </div>
+                                    )}
                                 </motion.button>
                             </div>
                             <form
@@ -786,10 +1041,13 @@ export default function ChatPage() {
                                 <textarea
                                     ref={textareaRef}
                                     value={input}
+                                    disabled={isLimitReached}
                                     onChange={(e) => setInput(e.target.value)}
-                                    className="flex-1 bg-transparent border-none focus:ring-0 text-slate-100 placeholder-slate-500 py-[12px] resize-none max-h-40 min-h-[48px] outline-none text-[15px] leading-relaxed scrollbar-hide"
+                                    className="flex-1 bg-transparent border-none focus:ring-0 text-slate-100 disabled:text-slate-500 placeholder-slate-500 py-[12px] resize-none max-h-40 min-h-[48px] outline-none text-[15px] leading-relaxed scrollbar-hide"
                                     placeholder={
-                                        attachedImages.length > 0
+                                        isLimitReached
+                                            ? "Daily limit reached. Please upgrade to continue."
+                                            : attachedImages.length > 0
                                             ? "Add a message about your image(s)..."
                                             : "Message Aura AI..."
                                     }
@@ -803,13 +1061,13 @@ export default function ChatPage() {
                                 />
                                 <motion.button
                                     type="submit"
-                                    disabled={isLoading || !canSend}
-                                    className={`w-[48px] h-[48px] mr-1 rounded-2xl font-bold flex items-center justify-center transition-colors ${canSend
-                                        ? "bg-accent text-background hover:bg-[#ffe033]"
-                                        : "bg-white/5 text-slate-500 cursor-not-allowed"
+                                    disabled={!canSend || isLimitReached || (isLoading && !input.trim() && attachedImages.length === 0)}
+                                    className={`w-[44px] h-[48px] flex items-center justify-center rounded-2xl transition-all mb-0 shrink-0 ${canSend && !isLimitReached
+                                        ? "bg-accent/10 text-accent hover:bg-accent/20"
+                                        : "bg-white/[0.03] text-slate-500 opacity-50 cursor-not-allowed"
                                         }`}
-                                    whileHover={canSend ? { scale: 1.05, boxShadow: "0 0 20px rgba(255,215,0,0.4)" } : {}}
-                                    whileTap={canSend ? { scale: 0.95 } : {}}
+                                    whileHover={canSend && !isLimitReached ? { scale: 1.05 } : {}}
+                                    whileTap={canSend && !isLimitReached ? { scale: 0.95 } : {}}
                                 >
                                     {isLoading ? (
                                         <span className="material-symbols-outlined font-bold animate-spin text-[20px]">progress_activity</span>

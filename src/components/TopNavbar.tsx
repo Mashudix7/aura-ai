@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 
@@ -34,6 +34,35 @@ export default function TopNavbar() {
     const { data: session } = useSession();
     const [authOpen, setAuthOpen] = useState(false);
 
+    // Track position for the sliding pill to prevent layoutId jump bugs
+    const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0, opacity: 0 });
+    const navRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+
+    useEffect(() => {
+        const updateIndicator = () => {
+            const activeIndex = navLinks.findIndex((link) => link.href === pathname);
+            if (activeIndex !== -1 && navRefs.current[activeIndex]) {
+                const el = navRefs.current[activeIndex]!;
+                setIndicatorStyle({
+                    left: el.offsetLeft,
+                    width: el.offsetWidth,
+                    opacity: 1,
+                });
+            } else {
+                setIndicatorStyle((prev) => ({ ...prev, opacity: 0 }));
+            }
+        };
+
+        // Small timeout to allow DOM to lay out fonts before measuring
+        const t = setTimeout(updateIndicator, 50);
+        window.addEventListener("resize", updateIndicator);
+        
+        return () => {
+            clearTimeout(t);
+            window.removeEventListener("resize", updateIndicator);
+        };
+    }, [pathname]);
+
     return (
         <>
             <Suspense fallback={null}>
@@ -55,8 +84,18 @@ export default function TopNavbar() {
                     </Link>
 
                     {/* Desktop Links */}
-                    <div className="hidden md:flex items-center gap-1 bg-white/[0.03] rounded-full px-1.5 py-1 border border-white/[0.06]">
-                        {navLinks.map((link) => {
+                    <div className="hidden md:flex items-center gap-1 bg-white/[0.03] rounded-full px-1.5 py-1 border border-white/[0.06] relative">
+                        {/* Native CSS sliding indicator to bypass framer-motion scroll-jump issues */}
+                        <div
+                            className="absolute top-1 bottom-1 bg-accent/15 border border-accent/20 rounded-full transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] pointer-events-none"
+                            style={{
+                                left: indicatorStyle.left,
+                                width: indicatorStyle.width,
+                                opacity: indicatorStyle.opacity,
+                            }}
+                        />
+
+                        {navLinks.map((link, i) => {
                             const isActive = pathname === link.href;
 
                             return (
@@ -64,21 +103,18 @@ export default function TopNavbar() {
                                     key={link.href}
                                     href={link.href}
                                     prefetch={false}
-                                    className={`relative px-5 py-2 text-sm font-medium transition-colors ${isActive
-                                        ? "text-accent"
-                                        : link.label === "Chat"
-                                            ? "text-accent drop-shadow-[0_0_8px_rgba(255,215,0,0.4)] hover:text-accent/80"
-                                            : "text-slate-400 hover:text-slate-200"
-                                        }`}
+                                    ref={(el) => {
+                                        navRefs.current[i] = el;
+                                    }}
+                                    className={`relative px-5 py-2 text-sm font-medium transition-colors z-10 ${
+                                        isActive
+                                            ? "text-accent"
+                                            : link.label === "Chat"
+                                                ? "text-accent drop-shadow-[0_0_8px_rgba(255,215,0,0.4)] hover:text-accent/80"
+                                                : "text-slate-400 hover:text-slate-200"
+                                    }`}
                                 >
-                                    {isActive && (
-                                        <motion.div
-                                            layoutId="nav-indicator"
-                                            className="absolute inset-0 bg-accent/15 border border-accent/20 rounded-full"
-                                            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                                        />
-                                    )}
-                                    <span className="relative z-10 flex items-center justify-center">
+                                    <span className="flex items-center justify-center">
                                         {link.label}
                                         {link.label === "Chat" && (
                                             <span
