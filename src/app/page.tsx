@@ -16,29 +16,29 @@ const GeometricElement = dynamic(() => import("@/components/GeometricElement"), 
 
 const features = [
   {
+    icon: "visibility",
+    title: "Multimodal Vision",
+    description: "Upload images and let Aura AI analyze, extract data, or explain complex visual information instantly.",
+  },
+  {
     icon: "psychology",
-    title: "Neural Synthesis",
-    description: "Advanced language models trained on trillion-parameter datasets for human-like reasoning.",
+    title: "Elite AI Models",
+    description: "Switch seamlessly between Gemini Flash, Step Flash, and Trinity Large to find the perfect intelligence for your task.",
   },
   {
-    icon: "monitoring",
-    title: "Predictive Logic",
-    description: "Anticipate market trends and consumer behavior with 99.9% accuracy using temporal processing.",
-  },
-  {
-    icon: "encrypted",
-    title: "Quantum Guard",
-    description: "Military-grade encryption securing your proprietary data with next-gen blockchain protocols.",
+    icon: "bolt",
+    title: "Real-Time Streaming",
+    description: "Experience blazing-fast responses streamed directly to your screen with our optimized serverless architecture.",
   },
 ];
 
-const integrations = [
-  { icon: "cloud", label: "Cloud Sync", image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=400&h=300&auto=format&fit=crop" },
-  { icon: "api", label: "REST API", image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=400&h=300&auto=format&fit=crop" },
-  { icon: "database", label: "SQL Engine", image: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=400&h=300&auto=format&fit=crop" },
-  { icon: "terminal", label: "CLI Tool", image: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=400&h=300&auto=format&fit=crop" },
-  { icon: "token", label: "Web3 Ready", image: "https://images.unsplash.com/photo-1634152962476-4b8a00e1915c?q=80&w=400&h=300&auto=format&fit=crop" },
-  { icon: "hub", label: "Multimodal", image: "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=400&h=300&auto=format&fit=crop" },
+const capabilities = [
+  { icon: "visibility", label: "Image Analysis", image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=400&h=300&auto=format&fit=crop" },
+  { icon: "code", label: "Code Generation", image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=400&h=300&auto=format&fit=crop" },
+  { icon: "edit_document", label: "Creative Writing", image: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=400&h=300&auto=format&fit=crop" },
+  { icon: "data_object", label: "Data Extraction", image: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=400&h=300&auto=format&fit=crop" },
+  { icon: "translate", label: "Translation", image: "https://images.unsplash.com/photo-1634152962476-4b8a00e1915c?q=80&w=400&h=300&auto=format&fit=crop" },
+  { icon: "analytics", label: "Logical Reasoning", image: "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=400&h=300&auto=format&fit=crop" },
 ];
 
 const pricingPlans = [
@@ -48,7 +48,7 @@ const pricingPlans = [
     period: "/ forever",
     description: "Perfect for exploring the basics of generative intelligence.",
     features: [
-      { text: "10 prompts per day", included: true, icon: "check_circle" },
+      { text: "20 prompts per day", included: true, icon: "check_circle" },
       { text: "Basic AI model access", included: true, icon: "check_circle" },
       { text: "Priority server access", included: false, icon: "block" },
       { text: "File & document uploads", included: false, icon: "block" },
@@ -232,8 +232,7 @@ export default function HomePage() {
 
           <FadeIn delay={0.5}>
             <p className="max-w-2xl mx-auto text-lg text-slate-400 mb-10 leading-relaxed">
-              Aura AI blends glassmorphism aesthetics with powerful neural networks
-              to elevate your workflow. Premium. Precise. Powerful.
+              Aura AI unites elite intelligence models—Gemini, Step, and Trinity—into one seamless hub. Enhance your workflow with multimodal vision, rapid reasoning, and ultimate precision.
             </p>
           </FadeIn>
 
@@ -245,12 +244,6 @@ export default function HomePage() {
                     Start for Free
                   </Button>
                 </Link>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-                <Button variant="secondary" className="w-full sm:w-auto px-8 py-4 rounded-xl">
-                  <span className="material-symbols-outlined">play_circle</span>
-                  View Demo
-                </Button>
               </motion.div>
             </div>
           </FadeIn>
@@ -326,7 +319,7 @@ export default function HomePage() {
 
 
       {/* Features Section */}
-      <section className="pt-56 md:pt-72 pb-24 bg-surface" id="features">
+      <section className="pt-32 md:pt-40 pb-24 bg-surface" id="features">
         <div className="max-w-7xl mx-auto px-4">
           <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-8" staggerDelay={0.12}>
             {features.map((feature) => (
@@ -338,7 +331,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Integrations Section */}
+      {/* Capabilities Section */}
       <section className="py-24 relative overflow-hidden bg-background" id="tools">
         {/* Abstract Aura AI Accent Background */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-[400px] bg-accent/5 rounded-[100%] blur-[120px] pointer-events-none" />
@@ -346,15 +339,15 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 relative z-10">
           <FadeIn className="mb-16">
             <h2 className="text-4xl font-black text-center text-transparent bg-clip-text bg-gradient-to-r from-accent via-yellow-200 to-accent">
-              Seamless Integration
+              Core Capabilities
             </h2>
-            <p className="text-center text-slate-400 mt-4 max-w-2xl mx-auto">Connect and sync with your favorite tools seamlessly with the power of Aura AI.</p>
+            <p className="text-center text-slate-400 mt-4 max-w-2xl mx-auto">From writing code to analyzing complex images, Aura AI handles your most demanding tasks.</p>
           </FadeIn>
         </div>
 
         {/* Carousel Container */}
         <div className="relative w-full z-10 w-full overflow-hidden">
-          <IntegrationCarousel items={integrations} />
+          <IntegrationCarousel items={capabilities} />
           {/* Edge fades for seamless look */}
           <div className="absolute inset-y-0 left-0 w-[15%] bg-gradient-to-r from-background to-transparent pointer-events-none" />
           <div className="absolute inset-y-0 right-0 w-[15%] bg-gradient-to-l from-background to-transparent pointer-events-none" />

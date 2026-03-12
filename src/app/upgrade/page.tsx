@@ -50,7 +50,7 @@ export default function UpgradePage() {
                             <div className="space-y-4">
                                 <div className="flex items-center gap-3 text-slate-200">
                                     <span className="material-symbols-outlined text-accent text-xl">check_circle</span>
-                                    <span className="font-medium">10 prompts per day</span>
+                                    <span className="font-medium">20 prompts per day</span>
                                 </div>
                                 <div className="flex items-center gap-3 text-slate-200">
                                     <span className="material-symbols-outlined text-accent text-xl">check_circle</span>
