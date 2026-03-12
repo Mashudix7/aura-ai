@@ -18,6 +18,7 @@ interface ChatMessageProps {
     isThinking?: boolean;
     index?: number;
     images?: ImageAttachment[];
+    modelName?: string;
 }
 
 export default function ChatMessage({
@@ -27,6 +28,7 @@ export default function ChatMessage({
     isThinking = false,
     index = 0,
     images,
+    modelName,
 }: ChatMessageProps) {
     const animInitial = { opacity: 0, y: 20, scale: 0.95 };
     const animAnimate = { opacity: 1, y: 0, scale: 1 };
@@ -138,7 +140,7 @@ export default function ChatMessage({
                         </ReactMarkdown>
                     </div>
                     <span className="text-[10px] uppercase tracking-widest text-slate-500 ml-1">
-                        Aura AI • {timestamp}
+                        Aura AI {modelName ? `- ${modelName}` : ""} • {timestamp}
                     </span>
                 </div>
             </motion.div>
