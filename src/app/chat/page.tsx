@@ -407,9 +407,9 @@ export default function ChatPage() {
             setAttachedImages([]);
             setIsLoading(true);
 
-            // Create thread if none exists
+            // Create thread if none exists (Auth users only)
             let actualThreadId = currentThreadId;
-            if (!actualThreadId) {
+            if (!actualThreadId && session?.user?.id) {
                 try {
                     const threadRes = await fetch("/api/chat/threads", {
                         method: "POST",

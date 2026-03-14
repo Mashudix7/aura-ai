@@ -104,37 +104,37 @@ export async function POST(req: Request) {
 
         // --- Subscription & Usage Logic ---
         const session = await auth();
-        if (!session?.user?.id) {
-            return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+        let userProfile = null;
+
+        if (session?.user?.id) {
+            userProfile = await prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: { subscription_tier: true, promptCount: true, lastPromptDate: true }
+            });
         }
 
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: { subscription_tier: true, promptCount: true, lastPromptDate: true }
-        });
-
-        if (!user) {
-            return new Response(JSON.stringify({ error: "User not found" }), { status: 404 });
-        }
-
+        const isGuest = !session?.user?.id || !userProfile;
+        const subscription_tier = userProfile?.subscription_tier || "Standard";
+        
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // start of today
+        today.setHours(0, 0, 0, 0);
 
-        let currentPromptCount = user.promptCount;
-        const lastPromptDate = user.lastPromptDate ? new Date(user.lastPromptDate) : null;
+        let currentPromptCount = userProfile?.promptCount || 0;
+        const lastPromptDate = userProfile?.lastPromptDate ? new Date(userProfile.lastPromptDate) : null;
         if (lastPromptDate) {
             lastPromptDate.setHours(0, 0, 0, 0);
         }
 
-        // Reset if it's a new day
-        if (!lastPromptDate || lastPromptDate.getTime() !== today.getTime()) {
+        // Reset count if it's a new day (only for logged-in users)
+        if (!isGuest && (!lastPromptDate || lastPromptDate.getTime() !== today.getTime())) {
             currentPromptCount = 0;
         }
 
-        // Process logic based on tier
-        if (user.subscription_tier === "Standard") {
-            // Check prompt limit
-            if (currentPromptCount >= 20) {
+        // --- Subscription & Usage Logic ---
+        // Guests and Standard users have the same restrictions
+        if (isGuest || subscription_tier === "Standard") {
+            // Check prompt limit (only for logged-in Standard users, guests are unlimited for now but could be rate-limited by Vercel)
+            if (!isGuest && currentPromptCount >= 20) {
                  return new Response(JSON.stringify({ error: "Daily prompt limit reached for Standard tier. Please upgrade for unlimited access." }), { status: 403 });
             }
 
@@ -150,11 +150,12 @@ export async function POST(req: Request) {
             }
         }
 
+
         // --- End Subscription Logic ---
 
-        // Log user prompt if threadId exists
+        // Log user prompt if threadId exists and user is authenticated
         const lastUserMessage = sanitizedMessages[sanitizedMessages.length - 1];
-        if (threadId && lastUserMessage?.content && lastUserMessage.role === "user") {
+        if (!isGuest && threadId && lastUserMessage?.content && lastUserMessage.role === "user") {
             try {
                 await prisma.message.create({
                     data: {
@@ -189,14 +190,16 @@ export async function POST(req: Request) {
             );
         }
 
-        // Increment count on successful request start
-        await prisma.user.update({
-            where: { id: session.user.id },
-            data: { 
-                promptCount: currentPromptCount + 1,
-                lastPromptDate: new Date()
-            }
-        });
+        // Increment count on successful request start (Auth only)
+        if (!isGuest && session?.user?.id) {
+            await prisma.user.update({
+                where: { id: session.user.id },
+                data: { 
+                    promptCount: currentPromptCount + 1,
+                    lastPromptDate: new Date()
+                }
+            });
+        }
 
         // Create a TransformStream to log the AI response to the database
         let fullAiResponse = "";
@@ -206,7 +209,7 @@ export async function POST(req: Request) {
                 controller.enqueue(chunk);
             },
             async flush(controller) {
-                if (threadId && fullAiResponse) {
+                if (!isGuest && threadId && fullAiResponse) {
                     try {
                         await prisma.message.create({
                             data: {

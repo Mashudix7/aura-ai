@@ -31,7 +31,7 @@ const plans = [
             { text: "Priority server access (No wait)", included: true },
             { text: "Latest premium AI models", included: true },
         ],
-        cta: "Subscribe with Mayar",
+        cta: "Subscribe",
         highlighted: true,
         badge: "Best Value",
     },
