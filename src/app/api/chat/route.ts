@@ -108,7 +108,7 @@ export async function POST(req: Request) {
             return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
         }
 
-        const user = await (prisma.user as any).findUnique({
+        const user = await prisma.user.findUnique({
             where: { id: session.user.id },
             select: { subscription_tier: true, promptCount: true, lastPromptDate: true }
         });
@@ -156,7 +156,7 @@ export async function POST(req: Request) {
         const lastUserMessage = sanitizedMessages[sanitizedMessages.length - 1];
         if (threadId && lastUserMessage?.content && lastUserMessage.role === "user") {
             try {
-                await (prisma.message as any).create({
+                await prisma.message.create({
                     data: {
                         threadId,
                         role: "user",
@@ -190,7 +190,7 @@ export async function POST(req: Request) {
         }
 
         // Increment count on successful request start
-        await (prisma.user as any).update({
+        await prisma.user.update({
             where: { id: session.user.id },
             data: { 
                 promptCount: currentPromptCount + 1,
@@ -208,7 +208,7 @@ export async function POST(req: Request) {
             async flush(controller) {
                 if (threadId && fullAiResponse) {
                     try {
-                        await (prisma.message as any).create({
+                        await prisma.message.create({
                             data: {
                                 threadId,
                                 role: "assistant", // "assistant" model
@@ -216,7 +216,7 @@ export async function POST(req: Request) {
                             }
                         });
                         // Update thread's updatedAt
-                        await (prisma.thread as any).update({
+                        await prisma.thread.update({
                             where: { id: threadId },
                             data: { updatedAt: new Date() }
                         });
