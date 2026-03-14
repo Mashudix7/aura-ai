@@ -10,11 +10,7 @@ export async function GET() {
             return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
         }
 
-<<<<<<< HEAD
         const user = await prisma.user.findUnique({
-=======
-        const user = await (prisma.user as any).findUnique({
->>>>>>> a158dab1ecefc9e11ec20355f2575c1dd4cce55e
             where: { id: session.user.id },
             select: {
                 subscription_tier: true,
