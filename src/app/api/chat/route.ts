@@ -16,9 +16,17 @@ You speak concisely, with authority, and focus on delivering high-end, premium q
 You were created to assist professionals, executives, and power users.
 Make your responses highly analytical, well-structured, and exact.
 You are powered by the ${modelName} model.
-When appropriate, use markdown formatting to structure your responses with headings, bullet points, and code blocks.
-CRITICAL: Always use triple backticks (\`\`\`) for multiple lines of code. NEVER use 4-space indentation to create a code block, as it breaks formatting in our interface. Do not indent normal text or list items with 4 spaces.
+
+CRITICAL FORMATTING RULES:
+1. Use standard paragraphs for normal explanation or text.
+2. Use bullet points ONLY when listing items. Do not mix code boxes inside list items unless strictly necessary.
+3. Always use triple backticks (\`\`\`) with language identifier for multiple lines of code.
+4. NEVER use 4-space indentation to create a code block.
+5. Use inline backticks (\`) ONLY for variables, keys, and small code values. Do not wrap entire sentences or phrases in backticks.
+6. Present runnable code in standalone code blocks, followed by separate explanations below, rather than fragmenting code into multiple lists.
+
 When the user sends an image, analyze it thoroughly and provide detailed, insightful observations.`;
+
 
 // Max image size: 4MB (Gemini limit is 20MB but we cap at 4MB for performance)
 const MAX_IMAGE_SIZE_BYTES = 4 * 1024 * 1024;
@@ -37,7 +45,8 @@ interface IncomingMessage {
 
 export async function POST(req: Request) {
     try {
-        const { messages, modelId, threadId } = await req.json();
+        const { messages, modelId, threadId, guestPromptCount } = await req.json();
+
 
         if (!messages || messages.length === 0) {
             return new Response(
@@ -147,9 +156,11 @@ export async function POST(req: Request) {
         // Guests and Standard users have the same restrictions
         if (isGuest || subscription_tier === "Standard") {
             // Check prompt limit
-            if (!isGuest && currentPromptCount >= 20) {
-                 return new Response(JSON.stringify({ error: "Daily prompt limit reached for Standard tier. Please upgrade for unlimited access." }), { status: 403 });
+            const effectiveCount = isGuest ? (guestPromptCount ?? 0) : currentPromptCount;
+            if (effectiveCount >= 20) {
+                 return new Response(JSON.stringify({ error: isGuest ? "Daily prompt limit reached for Guest mode. Please upgrade." : "Daily prompt limit reached for Standard tier. Please upgrade for unlimited access." }), { status: 403 });
             }
+
 
             // Check model selection (only Aura AI 2.5)
             if (selectedModel.id !== "gemini-2.5-flash") {

@@ -100,15 +100,28 @@ export default function ChatPage() {
     const [usage, setUsage] = useState<UserUsage | null>(null);
     const [isFetchingUsage, setIsFetchingUsage] = useState(true);
 
+    // Guest Usage (localStorage)
+    const [guestUsage, setGuestUsage] = useState<{ promptCount: number; lastPromptDate: string | null }>({
+        promptCount: 0,
+        lastPromptDate: null,
+    });
+
     // Chat History state
     const [threads, setThreads] = useState<any[]>([]);
     const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
     const [isLoadingThread, setIsLoadingThread] = useState(false);
 
     // Default to Standard restrictions unless explicitly Elite Access
-    const isStandard = usage?.tier !== "Elite Access";
-    const promptsRemaining = isStandard ? Math.max(0, 20 - (usage?.promptCount || 0)) : null;
-    const isLimitReached = isStandard && (usage?.promptCount || 0) >= 20;
+    const isStandard = session?.user?.id 
+        ? !["elite access", "elite"].includes(usage?.tier?.toLowerCase() || "") 
+        : true; // Guests are always Standard
+
+    const currentPromptCount = session?.user?.id 
+        ? (usage?.promptCount || 0) 
+        : guestUsage.promptCount;
+
+    const promptsRemaining = isStandard ? Math.max(0, 20 - currentPromptCount) : null;
+    const isLimitReached = isStandard && currentPromptCount >= 20;
 
     // Fetch user usage
     const fetchUsage = useCallback(async (force = false) => {
@@ -192,6 +205,32 @@ export default function ChatPage() {
             fetchThreads();
         } else {
             setIsFetchingUsage(false);
+            
+            // Load and initialize guest usage for unauthenticated users
+            const stored = localStorage.getItem("guest_usage");
+            const today = new Date().toDateString();
+            
+            if (stored) {
+                try {
+                    const parsed = JSON.parse(stored);
+                    const lastDate = parsed.lastPromptDate ? new Date(parsed.lastPromptDate).toDateString() : null;
+
+                    if (lastDate && lastDate !== today) {
+                        // Reset for a new day
+                        const resetUsage = { promptCount: 0, lastPromptDate: new Date().toISOString() };
+                        localStorage.setItem("guest_usage", JSON.stringify(resetUsage));
+                        setGuestUsage(resetUsage);
+                    } else {
+                        setGuestUsage(parsed);
+                    }
+                } catch (e) {
+                    console.error("Failed to parse guest usage", e);
+                }
+            } else {
+                const initial = { promptCount: 0, lastPromptDate: new Date().toISOString() };
+                localStorage.setItem("guest_usage", JSON.stringify(initial));
+                setGuestUsage(initial);
+            }
         }
     }, [session?.user, fetchUsage, fetchThreads]);
 
@@ -437,6 +476,7 @@ export default function ChatPage() {
                     body: JSON.stringify({
                         modelId: selectedModelId,
                         threadId: actualThreadId,
+                        guestPromptCount: !session?.user?.id ? guestUsage.promptCount : undefined,
                         messages: updatedMessages.map((m) => ({
                             role: m.role === "assistant" ? "assistant" : "user",
                             content: m.content,
@@ -487,7 +527,17 @@ export default function ChatPage() {
                 );
             } finally {
                 setIsLoading(false);
-                fetchUsage(true); // Refresh usage after generation
+                if (session?.user?.id) {
+                    fetchUsage(true); // Refresh usage after generation
+                } else {
+                    // Update guest usage increment locally
+                    const updated = {
+                        promptCount: guestUsage.promptCount + 1,
+                        lastPromptDate: new Date().toISOString(),
+                    };
+                    localStorage.setItem("guest_usage", JSON.stringify(updated));
+                    setGuestUsage(updated);
+                }
             }
         },
         [input, isLoading, messages, attachedImages, selectedModelId, isLimitReached, fetchUsage, fetchThreads, currentThreadId]

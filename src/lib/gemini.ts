@@ -95,7 +95,7 @@ export async function streamGemini(
     const body: Record<string, unknown> = {
         contents,
         generationConfig: {
-            temperature: 0.9,
+            temperature: 0.7,
             topP: 0.95,
             topK: 40,
             maxOutputTokens: 8192,
