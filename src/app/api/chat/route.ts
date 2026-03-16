@@ -115,6 +115,12 @@ export async function POST(req: Request) {
         }
 
         const isGuest = !session?.user?.id || !userProfile;
+        
+        // Safety guard: if logged in but DB row not loaded yet (replication lag or desync), return 401 to trigger refresh
+        if (session?.user?.id && !userProfile) {
+            return new Response(JSON.stringify({ error: "Session sync issues. Please refresh page or sign out and in again." }), { status: 401 });
+        }
+
         const subscription_tier = userProfile?.subscription_tier || "Standard";
         
         const today = new Date();
@@ -134,6 +140,10 @@ export async function POST(req: Request) {
             });
             currentPromptCount = 0;
         }
+
+        // Log to file for diagnostics
+        const fs = require("fs");
+        fs.appendFileSync("tmp/chat_api.log", `[${new Date().toISOString()}] User: ${session?.user?.id}, Name: ${session?.user?.name}, isGuest: ${isGuest}, tier: ${subscription_tier}, currentCount: ${currentPromptCount}\n`);
 
         console.log(`[ChatMessage] User ${session?.user?.id} promptCount before: ${currentPromptCount}`);
 
