@@ -115,17 +115,9 @@ export default function ChatPage() {
         if (!session?.user?.id) return;
         const cacheKey = `usage_${session.user.id}`;
 
-        if (!force && apiCache[cacheKey] && Date.now() - apiCache[cacheKey].timestamp < CACHE_TTL_MS) {
-            setUsage(apiCache[cacheKey].data);
-            if (apiCache[cacheKey].data.tier === "Standard") {
-                setSelectedModelId(MODELS[0].id);
-            }
-            setIsFetchingUsage(false);
-            return;
-        }
 
         try {
-            const res = await fetch("/api/user/usage");
+            const res = await fetch(`/api/user/usage?t=${Date.now()}`);
             if (res.ok) {
                 const data = await res.json();
                 apiCache[cacheKey] = { data, timestamp: Date.now() };

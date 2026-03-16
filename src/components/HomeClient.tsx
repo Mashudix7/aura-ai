@@ -13,6 +13,7 @@ const FeatureCard = dynamic(() => import("@/components/FeatureCard"), { ssr: fal
 const PricingCard = dynamic(() => import("@/components/PricingCard"), { ssr: false });
 const IntegrationCarousel = dynamic(() => import("@/components/IntegrationCarousel"));
 const Footer = dynamic(() => import("@/components/Footer"));
+const AuthModal = dynamic(() => import("@/components/AuthModal"), { ssr: false });
 const GeometricElement = dynamic(() => import("@/components/GeometricElement"), { ssr: false });
 const GeometricElementSphere = dynamic(() => import("@/components/GeometricElementSphere"), { ssr: false });
 const GeometricElementAtom = dynamic(() => import("@/components/GeometricElementAtom"), { ssr: false });
@@ -103,18 +104,19 @@ export default function HomeClient() {
   useEffect(() => { setMounted(true); }, []);
 
   const { data: session } = useSession();
+  const [authOpen, setAuthOpen] = useState(false);
 
   const authenticatedPricingPlans = useMemo(() => {
     return pricingPlans.map(plan => {
-      if (plan.name === "Elite Access") {
+      if (plan.name === "Elite Access" && !session) {
         return {
           ...plan,
-          href: session ? "/checkout" : "/login?callbackUrl=/checkout"
+          onClick: () => setAuthOpen(true)
         };
       }
       return plan;
     });
-  }, [session]);
+  }, [session, pricingPlans]);
 
   const particles = useMemo(() =>
     [...Array(20)].map((_, i) => ({
@@ -488,6 +490,7 @@ export default function HomeClient() {
       </section>
 
       <Footer />
+      <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
     </>
   );
 }

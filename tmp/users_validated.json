@@ -1,0 +1,26 @@
+[
+  {
+    "id": "cmmqda3gf000013o9wt7zeruq",
+    "email": "oki@gmail.com",
+    "name": "Oki",
+    "subscription_tier": "Elite Access",
+    "promptCount": 0,
+    "lastPromptDate": null
+  },
+  {
+    "id": "cmmrxfzwe0000i25vxcvwsvty",
+    "email": "fhrihlnt@gmail.com",
+    "name": "Fahri ",
+    "subscription_tier": "Standard",
+    "promptCount": 1,
+    "lastPromptDate": "2026-03-15T15:46:46.815Z"
+  },
+  {
+    "id": "cmmpwca8l00001kcj240gqey9",
+    "email": "mashudi@gmail.com",
+    "name": "Mashudi",
+    "subscription_tier": "Elite Access",
+    "promptCount": 1,
+    "lastPromptDate": "2026-03-15T18:31:15.530Z"
+  }
+]

@@ -128,13 +128,19 @@ export async function POST(req: Request) {
 
         // Reset count if it's a new day (only for logged-in users)
         if (!isGuest && (!lastPromptDate || lastPromptDate.getTime() !== today.getTime())) {
+            await prisma.user.update({
+                where: { id: session!.user!.id },
+                data: { promptCount: 0 }
+            });
             currentPromptCount = 0;
         }
+
+        console.log(`[ChatMessage] User ${session?.user?.id} promptCount before: ${currentPromptCount}`);
 
         // --- Subscription & Usage Logic ---
         // Guests and Standard users have the same restrictions
         if (isGuest || subscription_tier === "Standard") {
-            // Check prompt limit (only for logged-in Standard users, guests are unlimited for now but could be rate-limited by Vercel)
+            // Check prompt limit
             if (!isGuest && currentPromptCount >= 20) {
                  return new Response(JSON.stringify({ error: "Daily prompt limit reached for Standard tier. Please upgrade for unlimited access." }), { status: 403 });
             }
@@ -193,13 +199,18 @@ export async function POST(req: Request) {
 
         // Increment count on successful request start (Auth only)
         if (!isGuest && session?.user?.id) {
-            await prisma.user.update({
-                where: { id: session.user.id },
-                data: { 
-                    promptCount: currentPromptCount + 1,
-                    lastPromptDate: new Date()
-                }
-            });
+            try {
+                const res = await prisma.user.update({
+                    where: { id: session.user.id },
+                    data: { 
+                        promptCount: { increment: 1 },
+                        lastPromptDate: new Date()
+                    }
+                });
+                console.log(`[ChatMessage] User ${session.user.id} promptCount after increment:`, res.promptCount);
+            } catch (err) {
+                console.error("[ChatMessage] Failed to increment promptCount:", err);
+            }
         }
 
         // Create a TransformStream to log the AI response to the database

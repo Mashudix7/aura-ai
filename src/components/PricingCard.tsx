@@ -16,6 +16,7 @@ interface PricingCardProps {
     features: PricingFeature[];
     cta: string;
     href?: string;
+    onClick?: () => void;
     highlighted?: boolean;
     badge?: string;
 }
@@ -28,6 +29,7 @@ export default function PricingCard({
     features,
     cta,
     href = "#",
+    onClick,
     highlighted = false,
     badge,
 }: PricingCardProps) {
@@ -78,11 +80,19 @@ export default function PricingCard({
                 })}
             </div>
 
-            <Link href={href} className="mt-auto w-full block relative">
-                <button className={`w-full py-4 rounded-xl font-bold transition-all text-base ${highlighted ? "bg-accent hover:bg-accent/90 text-background font-black shadow-lg shadow-accent/20" : "border border-white/10 bg-white/5 hover:bg-white/10 text-white"}`}>
-                    {cta}
-                </button>
-            </Link>
+            {onClick ? (
+                <div className="mt-auto w-full block relative cursor-pointer" onClick={onClick}>
+                    <button className={`w-full py-4 rounded-xl font-bold transition-all text-base ${highlighted ? "bg-accent hover:bg-accent/90 text-background font-black shadow-lg shadow-accent/20" : "border border-white/10 bg-white/5 hover:bg-white/10 text-white"}`}>
+                        {cta}
+                    </button>
+                </div>
+            ) : (
+                <Link href={href} className="mt-auto w-full block relative">
+                    <button className={`w-full py-4 rounded-xl font-bold transition-all text-base ${highlighted ? "bg-accent hover:bg-accent/90 text-background font-black shadow-lg shadow-accent/20" : "border border-white/10 bg-white/5 hover:bg-white/10 text-white"}`}>
+                        {cta}
+                    </button>
+                </Link>
+            )}
         </div>
     );
 }
