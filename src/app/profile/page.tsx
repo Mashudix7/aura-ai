@@ -60,26 +60,28 @@ export default function SettingsPage() {
                                             )}
                                         </div>
                                     </motion.div>
-                                    <motion.button
-                                        className="absolute bottom-0 right-0 w-10 h-10 bg-accent rounded-full flex items-center justify-center text-background border-4 border-background"
-                                        whileHover={{ scale: 1.15 }}
-                                        whileTap={{ scale: 0.9 }}
-                                    >
-                                        <span className="material-symbols-outlined text-sm">edit</span>
-                                    </motion.button>
+
                                 </div>
                                 <div className="text-center">
-                                    <h2 className="text-3xl font-bold mb-1">{session?.user?.name || "User"}</h2>
+                                    <h2 className="text-3xl font-bold mb-1 flex items-center justify-center gap-2">
+                                        {session?.user?.name || "User"}
+                                        {isElite && (
+                                            <motion.span 
+                                                className="material-symbols-outlined text-accent text-2xl font-black"
+                                                initial={{ scale: 0.5, rotate: -15 }}
+                                                animate={{ scale: 1, rotate: 0 }}
+                                                transition={{ type: "spring", stiffness: 200, damping: 10 }}
+                                                title="Elite Access"
+                                                style={{ fontVariationSettings: '"FILL" 1' }}
+                                            >
+                                                crown
+                                            </motion.span>
+                                        )}
+                                    </h2>
                                     <p className="text-slate-400">{session?.user?.email || "No email available"}</p>
                                 </div>
                                 <div className="flex flex-col gap-3 w-full mt-4">
-                                    <motion.button
-                                        className="w-full bg-accent text-background font-bold py-3 px-4 rounded-xl"
-                                        whileHover={{ scale: 1.02, boxShadow: "0 0 20px rgba(255,215,0,0.2)" }}
-                                        whileTap={{ scale: 0.98 }}
-                                    >
-                                        Edit Profile
-                                    </motion.button>
+
                                     <motion.button
                                         onClick={() => signOut({ callbackUrl: "/" })}
                                         className="w-full bg-red-500/10 text-red-500 border border-red-500/20 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2"
@@ -157,24 +159,7 @@ export default function SettingsPage() {
                             </h3>
                             <div className="glass rounded-2xl p-8 space-y-8">
                                 {/* Model Selection */}
-                                <div className="space-y-3">
-                                    <label className="text-sm font-medium text-slate-300">
-                                        Default Model
-                                    </label>
-                                    <div className="relative">
-                                        <select className="glass-input w-full rounded-xl py-4 px-5 appearance-none focus:ring-2 focus:ring-accent/50 focus:outline-none text-slate-100 bg-transparent text-lg">
-                                            <option value="gemini-2.5-flash">Aura AI 2.5 (Gemini)</option>
-                                            <option value="stepfun" disabled={!isElite}>Step 3.5 Flash (Elite Only)</option>
-                                            <option value="arcee" disabled={!isElite}>Trinity Large (Elite Only)</option>
-                                        </select>
-                                        <span className="material-symbols-outlined absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                            expand_more
-                                        </span>
-                                    </div>
-                                    <p className="text-xs text-slate-500 pl-1">Aura AI 2.5 is our most balanced and precise model for daily tasks.</p>
-                                </div>
 
-                                <hr className="border-white/5" />
 
                                 <div className="p-4 rounded-xl bg-accent/5 border border-accent/10">
                                     <div className="flex gap-3">

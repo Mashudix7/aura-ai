@@ -68,10 +68,7 @@ export default function FeatureCard({
                     {description}
                 </p>
                 
-                <div className="mt-6 flex items-center text-xs font-bold text-accent opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500 delay-75">
-                    Explore Capability
-                    <span className="material-symbols-outlined ml-2 text-base group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                </div>
+
             </div>
         </motion.div>
     );

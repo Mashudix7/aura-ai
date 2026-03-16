@@ -4,6 +4,7 @@ import Button from "@/components/Button";
 import Spotlight from "@/components/Spotlight";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/AnimationWrappers";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
@@ -100,6 +101,20 @@ export default function HomeClient() {
   const geo2ParallaxY = useTransform(scrollY, [0, 1000], ["-50%", "-90%"]);
 
   useEffect(() => { setMounted(true); }, []);
+
+  const { data: session } = useSession();
+
+  const authenticatedPricingPlans = useMemo(() => {
+    return pricingPlans.map(plan => {
+      if (plan.name === "Elite Access") {
+        return {
+          ...plan,
+          href: session ? "/checkout" : "/login?callbackUrl=/checkout"
+        };
+      }
+      return plan;
+    });
+  }, [session]);
 
   const particles = useMemo(() =>
     [...Array(20)].map((_, i) => ({
@@ -374,7 +389,7 @@ export default function HomeClient() {
             <p className="text-slate-400">Scalable intelligence for every ambition.</p>
           </FadeIn>
           <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto" staggerDelay={0.12}>
-            {pricingPlans.map((plan) => (
+            {authenticatedPricingPlans.map((plan) => (
               <StaggerItem key={plan.name}>
                 <PricingCard {...plan} />
               </StaggerItem>

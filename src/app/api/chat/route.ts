@@ -17,6 +17,7 @@ You were created to assist professionals, executives, and power users.
 Make your responses highly analytical, well-structured, and exact.
 You are powered by the ${modelName} model.
 When appropriate, use markdown formatting to structure your responses with headings, bullet points, and code blocks.
+CRITICAL: Always use triple backticks (\`\`\`) for multiple lines of code. NEVER use 4-space indentation to create a code block, as it breaks formatting in our interface. Do not indent normal text or list items with 4 spaces.
 When the user sends an image, analyze it thoroughly and provide detailed, insightful observations.`;
 
 // Max image size: 4MB (Gemini limit is 20MB but we cap at 4MB for performance)

@@ -2,13 +2,74 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/AnimationWrappers";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import Image from "next/image";
 
 export default function CheckoutPage() {
+    const { data: session, status } = useSession();
     const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [paymentStatus, setPaymentStatus] = useState<"processing" | "success" | null>(null);
+    const [usage, setUsage] = useState<{ tier: string } | null>(null);
+    const [isFetchingUsage, setIsFetchingUsage] = useState(true);
+
+    useEffect(() => {
+        const fetchUsage = async () => {
+            if (!session?.user) return;
+            try {
+                const res = await fetch("/api/user/usage");
+                if (res.ok) {
+                    const data = await res.json();
+                    setUsage(data);
+                }
+            } catch (err) {
+                console.error("Failed to fetch usage:", err);
+            } finally {
+                setIsFetchingUsage(false);
+            }
+        };
+        if (session?.user) {
+            fetchUsage();
+        } else if (status === "unauthenticated") {
+            setIsFetchingUsage(false);
+        }
+    }, [session, status]);
+
+    if (status === "loading" || (status === "authenticated" && isFetchingUsage)) {
+        return (
+            <div className="min-h-screen bg-surface-dark flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <span className="material-symbols-outlined animate-spin text-accent text-4xl">refresh</span>
+                    <p className="text-slate-400 text-sm">Authenticating...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (status === "unauthenticated") {
+        window.location.href = "/login?callbackUrl=/checkout";
+        return null;
+    }
+
+    const isElite = usage?.tier === "Elite Access";
+
+    if (isElite) {
+        return (
+            <div className="min-h-screen bg-surface-dark flex items-center justify-center p-4">
+                <div className="glass rounded-3xl p-8 max-w-md w-full text-center border border-white/5 space-y-6">
+                    <div className="w-16 h-16 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mx-auto">
+                        <span className="material-symbols-outlined text-accent text-3xl">workspace_premium</span>
+                    </div>
+                    <h2 className="text-2xl font-bold text-white">Elite Access Active</h2>
+                    <p className="text-slate-400 text-sm">You are already an Elite subscriber. Unlimited intelligence is at your service.</p>
+                    <button onClick={() => window.location.href = "/profile"} className="w-full bg-accent text-background font-bold py-3 rounded-xl mt-4">
+                        View Profile
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     const paymentMethods = [
         { id: "qris", name: "QRIS", icon: "qr_code_2", type: "Instant" },

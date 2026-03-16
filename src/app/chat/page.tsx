@@ -7,7 +7,7 @@ import ChatMessage from "@/components/ChatMessage";
 import Spotlight from "@/components/Spotlight";
 import { FadeIn } from "@/components/AnimationWrappers";
 import { motion, AnimatePresence } from "framer-motion";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 
 interface UserUsage {
     tier: string;
@@ -133,6 +133,9 @@ export default function ChatPage() {
                 if (data.tier === "Standard") {
                     setSelectedModelId(MODELS[0].id); // Force basic model for standard
                 }
+            } else if (res.status === 401) {
+                // Invalid session, trigger logout
+                signOut({ callbackUrl: "/login" });
             }
         } catch (error) {
             console.error("Failed to fetch usage:", error);

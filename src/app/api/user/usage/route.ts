@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
     try {
         const session = await auth();
@@ -20,13 +22,19 @@ export async function GET() {
         });
 
         if (!user) {
-            return NextResponse.json({ message: "User not found" }, { status: 404 });
+            return NextResponse.json({ message: "Invalid session" }, { status: 401 });
         }
 
         return NextResponse.json({
             tier: user.subscription_tier,
             promptCount: user.promptCount,
             lastPromptDate: user.lastPromptDate,
+        }, {
+            headers: {
+                "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0",
+            }
         });
 
     } catch (error) {
