@@ -2,6 +2,11 @@
 
 import Footer from "@/components/Footer";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/AnimationWrappers";
+import { useSession } from "next-auth/react";
+import dynamic from "next/dynamic";
+import { useState } from "react";
+
+const AuthModal = dynamic(() => import("@/components/AuthModal"), { ssr: false });
 
 const paymentMethods = [
     { icon: "qr_code_2", label: "QRIS" },
@@ -11,6 +16,9 @@ const paymentMethods = [
 ];
 
 export default function UpgradePage() {
+    const { data: session } = useSession();
+    const [authOpen, setAuthOpen] = useState(false);
+
     return (
         <div className="relative flex flex-col flex-1 bg-[radial-gradient(at_0%_0%,rgba(255,215,0,0.05)_0px,transparent_50%),radial-gradient(at_100%_100%,rgba(255,215,0,0.05)_0px,transparent_50%)]">
             <main className="flex-1 w-full max-w-7xl mx-auto pt-24 md:pt-32">
@@ -109,7 +117,16 @@ export default function UpgradePage() {
                                     <span className="font-medium">Latest premium AI models</span>
                                 </div>
                             </div>
-                            <button onClick={() => window.location.href = '/checkout'} className="mt-auto w-full py-4 rounded-xl bg-accent hover:bg-accent/90 text-background font-black transition-all shadow-lg shadow-accent/20 text-base">
+                            <button 
+                                onClick={() => {
+                                    if (!session) {
+                                        setAuthOpen(true);
+                                    } else {
+                                        window.location.href = '/checkout';
+                                    }
+                                }} 
+                                className="mt-auto w-full py-4 rounded-xl bg-accent hover:bg-accent/90 text-background font-black transition-all shadow-lg shadow-accent/20 text-base"
+                            >
                                 Subscribe with Mayar
                             </button>
                         </div>
@@ -133,6 +150,7 @@ export default function UpgradePage() {
                     </div>
                 </FadeIn>
             </main>
+            <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
             <Footer />
         </div>
     );

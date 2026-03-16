@@ -141,10 +141,6 @@ export async function POST(req: Request) {
             currentPromptCount = 0;
         }
 
-        // Log to file for diagnostics
-        const fs = require("fs");
-        fs.appendFileSync("tmp/chat_api.log", `[${new Date().toISOString()}] User: ${session?.user?.id}, Name: ${session?.user?.name}, isGuest: ${isGuest}, tier: ${subscription_tier}, currentCount: ${currentPromptCount}\n`);
-
         console.log(`[ChatMessage] User ${session?.user?.id} promptCount before: ${currentPromptCount}`);
 
         // --- Subscription & Usage Logic ---
